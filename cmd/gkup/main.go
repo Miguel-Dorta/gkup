@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Miguel-Dorta/gkup-try3/pkg"
+	"github.com/Miguel-Dorta/gkup/pkg"
 	"os"
 )
 
