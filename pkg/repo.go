@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -181,6 +182,43 @@ func BackupPaths(paths []string) error {
 		panic(err) //TODO
 	}
 	return nil
+}
+
+func RestoreBackup(date, restoreTo string) error {
+	var backupPath string; {
+		bacPath := filepath.Join(RepoPath, "backups")
+		backupList, err := listDir(bacPath)
+		if err != nil {
+			return err
+		}
+
+		found := false
+		for _, bac := range backupList {
+			name := bac.Name()
+			if strings.HasPrefix(name, date) {
+				backupPath = filepath.Join(bacPath, name)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return fmt.Errorf("") //TODO not found
+		}
+	}
+
+	backup, err := readBackup(backupPath)
+	if err != nil {
+		return err
+	}
+
+	//TODO check versioning
+
+	/*TODO
+	 * Decide:
+	 * 1. Save a relative path in files (which implies to modify the file struct and everything that uses it)
+	 * 2. Modify the backup JSON structure to support an implicit path (which implies difficulty in listing all the files in it)
+	 */
 }
 
 func addFile(f file) error {

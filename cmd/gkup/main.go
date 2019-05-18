@@ -47,6 +47,7 @@ Optional args:
 		if len(os.Args) != 4 {
 			fmt.Println("Nothing to restore - aborting!")
 		}
+
 		break
 	default:
 		fmt.Printf("Command not found!")
