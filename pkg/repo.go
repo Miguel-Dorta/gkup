@@ -112,14 +112,14 @@ func CheckIntegrity() []error {
 				//TODO
 			}
 
-			/*newHash, err := hashFile(filepath.Join(fileByteDirPath, name))
+			newHash, err := hashFile(filepath.Join(fileByteDirPath, name))
 			if err != nil {
 				//TODO
 			}
 
-			if hash != newHash {
+			if !equals(hash, newHash) {
 				//TODO
-			}*/
+			}
 		}
 	}
 	return errs
@@ -176,9 +176,10 @@ func BackupPaths(paths []string) error {
 }
 
 func RestoreBackup(date, restoreTo string) error {
-	var backupPath string; {
-		bacPath := filepath.Join(RepoPath, "backups")
-		backupList, err := listDir(bacPath)
+	var b backup
+	{
+		backupPath := filepath.Join(RepoPath, "backups")
+		backupList, err := listDir(backupPath)
 		if err != nil {
 			return err
 		}
@@ -187,7 +188,7 @@ func RestoreBackup(date, restoreTo string) error {
 		for _, bac := range backupList {
 			name := bac.Name()
 			if strings.HasPrefix(name, date) {
-				backupPath = filepath.Join(bacPath, name)
+				backupPath = filepath.Join(backupPath, name)
 				found = true
 				break
 			}
@@ -196,26 +197,50 @@ func RestoreBackup(date, restoreTo string) error {
 		if !found {
 			return fmt.Errorf("") //TODO not found
 		}
-	}
 
-	backup, err := readBackup(backupPath)
-	if err != nil {
-		return err
+		b, err = readBackup(backupPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	//TODO check versioning
 
-
+	return restoreDir(dir{Files: b.Files, Dirs: b.Dirs}, restoreTo)
 }
 
-func addFile(f file) error {
+func restoreDir(d dir, pathToRestore string) (err error) {
+	for _, childFile := range d.Files {
+		if err = copyFile(getPathInRepo(childFile), filepath.Join(pathToRestore, childFile.Name)); err != nil {
+			return
+		}
+	}
+
+	for _, childDir := range d.Dirs {
+		childPath := filepath.Join(pathToRestore, childDir.Name)
+		if err = os.Mkdir(childPath, 0700); err != nil {
+			return
+		}
+		if err = restoreDir(childDir, childPath); err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func getPathInRepo(f file) string {
 	hashStr := hex.EncodeToString(f.Hash)
-	pathToSave := filepath.Join(
+	return filepath.Join(
 		RepoPath,
 		"files",
 		hashStr[:2],
 		fmt.Sprintf("%s-%d", hashStr, f.Size),
 	)
+}
+
+func addFile(f file) error {
+	pathToSave := getPathInRepo(f)
 
 	// If file already exists, do nothing. If exists but there's an error, return it
 	if _, err := os.Stat(pathToSave); err == nil {
