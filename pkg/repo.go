@@ -126,62 +126,53 @@ func CheckIntegrity() []error {
 }
 
 func BackupPaths(paths []string) error {
-	savedFiles := make([]file, 0, 1000)
+	now := time.Now() //Save the moment where the backup started
+
+	//TODO check for duplicates
+
+	d := dir{
+		Files: make([]file, 0, 10),
+		Dirs: make([]dir, 0, 10),
+	}
 	for _, path := range paths {
 		stat, err := os.Stat(path)
 		if err != nil {
-			return err
+			return err //TODO check if exists
 		}
 		mode := stat.Mode()
+		name := stat.Name()
 
 		if mode.IsDir() {
-			subFiles, err := listFilesRecursive(path)
+			child, err := listFilesRecursive(path, name)
 			if err != nil {
-				panic(err) //TODO
+				return err
 			}
-
-			for _, f := range subFiles {
-				err = addFile(f)
-				if err != nil {
-					panic(err) //TODO
-				}
-			}
-
-			savedFiles = append(savedFiles, subFiles...)
+			d.Dirs = append(d.Dirs, child)
 		} else if mode.IsRegular() {
-			f, err := getFile(path)
+			child, err := getFile(path)
 			if err != nil {
-				panic(err) //TODO
+				return err
 			}
 
-			err = addFile(f)
-			if err != nil {
-				panic(err) //TODO
+			if err = addFile(child); err != nil {
+				return err
 			}
 
-			savedFiles = append(savedFiles, f)
+			d.Files = append(d.Files, child)
 		} else {
-			//TODO
+			// TODO symlinks and other things
 		}
 	}
 
-	now := time.Now()
-	err := writeBackup(
-		fmt.Sprintf(
-			"%04d-%02d-%02d_%02d-%02d-%02d.json",
-			now.Year(),
-			now.Month(),
-			now.Day(),
-			now.Hour(),
-			now.Minute(),
-			now.Second(),
-		),
-		savedFiles,
-	)
-	if err != nil {
-		panic(err) //TODO
-	}
-	return nil
+	return writeBackup(fmt.Sprintf(
+		"%04d-%02d-%02d_%02d-%02d-%02d.json",
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour(),
+		now.Minute(),
+		now.Second(),
+	), d)
 }
 
 func RestoreBackup(date, restoreTo string) error {
@@ -214,11 +205,7 @@ func RestoreBackup(date, restoreTo string) error {
 
 	//TODO check versioning
 
-	/*TODO
-	 * Decide:
-	 * 1. Save a relative path in files (which implies to modify the file struct and everything that uses it)
-	 * 2. Modify the backup JSON structure to support an implicit path (which implies difficulty in listing all the files in it)
-	 */
+
 }
 
 func addFile(f file) error {
@@ -237,7 +224,7 @@ func addFile(f file) error {
 		return err
 	}
 
-	err := copyFile(f.Path, pathToSave)
+	err := copyFile(f.realPath, pathToSave)
 	if err != nil {
 		return err //TODO critical failure. If fails during copy, there'll be a ghost file
 	}

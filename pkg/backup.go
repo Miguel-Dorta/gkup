@@ -7,6 +7,7 @@ import (
 
 type backup struct {
 	Version string `json:version`
+	Dirs []dir `json:dirs`
 	Files []file   `json:files`
 }
 
@@ -20,8 +21,12 @@ func readBackup(path string) (b backup, err error) {
 	return
 }
 
-func writeBackup(path string, files []file) error {
-	data, err := json.Marshal(backup{Version: Version, Files: files})
+func writeBackup(path string, d dir) error {
+	data, err := json.Marshal(backup{
+		Version: Version,
+		Dirs: d.Dirs,
+		Files: d.Files,
+	})
 	if err != nil {
 		return err
 	}

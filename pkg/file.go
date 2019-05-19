@@ -6,41 +6,56 @@ import (
 	"path/filepath"
 )
 
-type file struct {
-	Path string `json:path`
-	Size int64 `json:size`
-	Hash []byte `json:hash`
+type dir struct {
+	Name string `json:name`
+	Dirs []dir `json:dirs`
+	Files []file `json:files`
 }
 
-func listFilesRecursive(path string) ([]file, error) {
+type file struct {
+	Name string `json:name`
+	Size int64 `json:size`
+	Hash []byte `json:hash`
+	realPath string //Private so it won't be saved in the backup.json
+}
+
+func listFilesRecursive(path, name string) (dir, error) {
 	childs, err := listDir(path)
 	if err != nil {
-		return nil, err //TODO
+		return dir{}, err //TODO
 	}
 
-	files := make([]file, 0, 10)
+	d := dir {
+		Name: name,
+		// Avoid unnecessary slice resizing
+		Files: make([]file, 0, 10),
+		Dirs: make([]dir, 0, 10),
+	}
+
 	for _, child := range childs {
+		// Avoid unnecessary function calls
 		childMode := child.Mode()
-		childPath := filepath.Join(path, child.Name())
+		childName := child.Name()
+		childPath := filepath.Join(path, childName)
 
 		if childMode.IsDir() {
-			subChilds, err := listFilesRecursive(childPath)
+			subChild, err := listFilesRecursive(childPath, childName)
 			if err != nil {
-				return nil, err //TODO
+				return dir{}, err //TODO if omit error is active, return slice, else stop function ¿maybe?
 			}
-			files = append(files, subChilds...)
+			d.Dirs = append(d.Dirs, subChild)
 		} else if childMode.IsRegular() {
-			f, err := getFile(childPath)
+			subChild, err := getFile(childPath)
 			if err != nil {
-				//TODO
+				return dir{}, err //TODO if omit error is active, return slice, else stop function ¿maybe?
 			}
-			files = append(files, f)
+			d.Files = append(d.Files, subChild)
 		} else {
-			//TODO
+			// TODO symlinks and other cases
 		}
 	}
 
-	return files, nil
+	return d, nil
 }
 
 func getFile(path string) (f file, err error) {
@@ -55,7 +70,8 @@ func getFile(path string) (f file, err error) {
 		return
 	}
 
-	f.Path = path
+	f.realPath = path
+	f.Name = filepath.Base(path)
 	return
 }
 
