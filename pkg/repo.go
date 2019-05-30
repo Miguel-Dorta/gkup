@@ -56,13 +56,10 @@ func CreateRepo() error {
 	}
 
 	// Write settings.toml
-	data, err := generateSettingsToml(false)
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(settingsPath, data, 0600); err != nil {
+	if err := ioutil.WriteFile(settingsPath, generateSettingsToml(), 0600); err != nil {
 		return fmt.Errorf("error writing settings: %s", err.Error())
 	}
+	return nil
 }
 
 func CheckIntegrity() []error {

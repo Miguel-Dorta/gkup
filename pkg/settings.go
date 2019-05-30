@@ -16,9 +16,10 @@ type settings struct {
 	HashAlgorithm string `toml:hashAlgorithm`
 }
 
-func generateSettingsToml(isLocked bool) ([]byte, error) {
-	return toml.Marshal(settings{
+func generateSettingsToml() (data []byte) {
+	data, _ = toml.Marshal(settings{
 		Version:       Version,
 		HashAlgorithm: HashAlgorithm,
 	})
+	return
 }
