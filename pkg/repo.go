@@ -33,9 +33,9 @@ func CreateRepo() error {
 	}
 
 	// Check if it's empty
-	if childs, err := listDir(RepoPath); err != nil {
+	if children, err := listDir(RepoPath); err != nil {
 		return fmt.Errorf("error listing \"%s\": %s", RepoPath, err.Error())
-	} else if len(childs) != 0 {
+	} else if len(children) != 0 {
 		return fmt.Errorf("\"%s\" is not empty", RepoPath)
 	}
 
