@@ -11,50 +11,58 @@ import (
 	"time"
 )
 
-func CreateRepo() (err error) {
+var (
+	backupFolder = "backup"
+	filesFolder = "files"
+	settingsPath = "settings.toml"
+)
+
+func CreateRepo() error {
 	// Check if it's a directory
-	stat, err := os.Stat(RepoPath)
-	if err != nil {
-		return
-	}
-	if !stat.IsDir() {
-		return //TODO not dir
+	if stat, err := os.Stat(RepoPath); err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("error getting stats from \"%s\": %s", RepoPath, err.Error())
+		}
+		// If not exists, create it
+		if err = os.MkdirAll(RepoPath, 0700); err != nil {
+			return fmt.Errorf("error creating directory \"%s\": %s", RepoPath, err.Error())
+		}
+	} else if !stat.IsDir() {
+		//TODO read symlink
+		return fmt.Errorf("\"%s\" is not a directory", RepoPath)
 	}
 
 	// Check if it's empty
-	childs, err := listDir(RepoPath)
-	if err != nil {
-		return
-	}
-	if len(childs) != 0 {
-		return //TODO not empty
+	if childs, err := listDir(RepoPath); err != nil {
+		return fmt.Errorf("error listing \"%s\": %s", RepoPath, err.Error())
+	} else if len(childs) != 0 {
+		return fmt.Errorf("\"%s\" is not empty", RepoPath)
 	}
 
 	// Make backup folder
-	err = os.Mkdir(filepath.Join(RepoPath, "backups"), 0700)
-	if err != nil {
-		return
+	if err := os.Mkdir(backupFolder, 0700); err != nil {
+		return fmt.Errorf("error creating subdirectory \"%s\": %s", backupFolder, err.Error())
 	}
 
 	// Make file folder and subforders
-	fileDirPath := filepath.Join(RepoPath, "files")
-	err = os.Mkdir(fileDirPath, 0700)
-	if err != nil {
-		return
+	if err := os.Mkdir(filesFolder, 0700); err != nil {
+		return fmt.Errorf("error creating subdirectory \"%s\": %s", filesFolder, err.Error())
 	}
 	for i:=0x0; i<=0xff; i++ {
-		err = os.Mkdir(filepath.Join(fileDirPath, fmt.Sprintf("%02x", i)), 0700)
-		if err != nil {
-			return
+		path := filepath.Join(filesFolder, fmt.Sprintf("%02x", i))
+		if err := os.Mkdir(path, 0700); err != nil {
+			return fmt.Errorf("error creating subdirectory \"%s\": %s", path, err.Error())
 		}
 	}
 
 	// Write settings.toml
 	data, err := generateSettingsToml(false)
 	if err != nil {
-		return
+		return err
 	}
-	return ioutil.WriteFile(filepath.Join(RepoPath, "settings.toml"), data, 0600)
+	if err := ioutil.WriteFile(settingsPath, data, 0600); err != nil {
+		return fmt.Errorf("error writing settings: %s", err.Error())
+	}
 }
 
 func CheckIntegrity() []error {
