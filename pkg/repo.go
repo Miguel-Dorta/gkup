@@ -57,8 +57,6 @@ func CreateRepo() (err error) {
 	return ioutil.WriteFile(filepath.Join(RepoPath, "settings.toml"), data, 0600)
 }
 
-//TODO check if it's a repo function
-
 func CheckIntegrity() []error {
 	errs := make([]error, 0, 10)
 

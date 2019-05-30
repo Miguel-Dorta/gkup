@@ -14,13 +14,11 @@ var (
 type settings struct {
 	Version       string `toml:version`
 	HashAlgorithm string `toml:hashAlgorithm`
-	IsLocked      bool   `toml:IsLocked`
 }
 
 func generateSettingsToml(isLocked bool) ([]byte, error) {
 	return toml.Marshal(settings{
 		Version:       Version,
 		HashAlgorithm: HashAlgorithm,
-		IsLocked:      isLocked,
 	})
 }
