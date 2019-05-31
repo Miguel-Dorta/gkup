@@ -1,7 +1,9 @@
 package pkg
 
 import (
+	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -62,70 +64,90 @@ func CreateRepo() error {
 	return nil
 }
 
-func CheckIntegrity() []error {
-	errs := make([]error, 0, 10)
+func CheckIntegrity() (errs int) {
+	//TODO load settings
 
-	fileDirPath := filepath.Join(RepoPath, "files")
-	l1, err := listDir(fileDirPath)
+	// l1 is the list of elements in repo/files.
+	// It should contain folders named from 00 to ff.
+	l1, err := listDir(filesFolder)
 	if err != nil {
-		return append(errs, err)
+		fmt.Fprintln(os.Stderr, "Error accessing files. Aborting...")
+		return 1
 	}
+	// c1 represent a given Child of the list l1
 	for _, c1 := range l1 {
 		if !c1.IsDir() {
 			continue
 		}
+		c1Path := filepath.Join(filesFolder, c1.Name())
 
-		fileByteDirPath := filepath.Join(fileDirPath, c1.Name())
-		l2, err := listDir(fileByteDirPath)
+		// l2 is the list of elements in repo/files/c1.
+		// It should contain the files named like <hash_hex>-<size_bytes>
+		l2, err := listDir(c1Path)
 		if err != nil {
-			errs = append(errs, err) //TODO
+			fmt.Fprintf(os.Stderr, "error listing \"%s\": %s\n", c1Path, err.Error())
+			errs++
+			continue
 		}
 
+		// c2 represents a given Child of the list l2,
+		// that means, a file in repo/files/c1
 		for _, c2 := range l2 {
-			if c2.IsDir() {
+			if !c2.Mode().IsRegular() {
 				continue
 			}
-			name := c2.Name()
+			c2Name := c2.Name()
+			c2Path := filepath.Join(c1Path, c2Name)
 
-			// Find hash-size
-			var hash []byte
-			var size int64 = -1
-			for i, b := range name {
-				if b != '-' {
-					continue
-				}
-
-				hash, err = hex.DecodeString(name[:i])
-				if err != nil {
-					errs = append(errs, err)
-					break //TODO
-				}
-
-				size, err = strconv.ParseInt(name[i+1:], 10, 64)
-				if err != nil {
-					errs = append(errs, err)
-					break //TODO
-				}
-			}
-			if len(hash) == 0 || size < 0 {
-				continue //TODO
+			hash, size, err := getHashSize(c2Name)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error getting info from \"%s\": %s\n", c2Path, err.Error())
+				errs++
+				continue
 			}
 
 			if c2.Size() != size {
-				//TODO
+				fmt.Fprintf(os.Stderr, "sizes don't match in \"%s\"\n", c2Path)
+				errs++
+				continue
 			}
 
-			newHash, err := hashFile(filepath.Join(fileByteDirPath, name))
-			if err != nil {
-				//TODO
-			}
-
-			if !equals(hash, newHash) {
-				//TODO
+			if newHash, err := hashFile(c2Path); err != nil {
+				fmt.Fprintf(os.Stderr, "cannot hash \"%s\"\n", c2Path)
+				errs++
+				continue
+			} else if bytes.Equal(hash, newHash) {
+				fmt.Fprintf(os.Stderr, "hashes don't match in \"%s\"\n", c2Path)
+				errs++
+				continue
 			}
 		}
 	}
 	return errs
+}
+
+func getHashSize(fileName string) (hash []byte, size int64, err error) {
+	size = -1
+	for i, b := range fileName {
+		if b != '-' {
+			continue
+		}
+
+		if hash, err = hex.DecodeString(fileName[:i]); err != nil {
+			return nil, 0, fmt.Errorf("cannot decode hash: %s", err.Error())
+		}
+
+		if size, err = strconv.ParseInt(fileName[i+1:], 10, 64); err != nil {
+			return nil, 0, fmt.Errorf("cannot parse size: %s", err.Error())
+		}
+		break
+	}
+
+	if hash == nil || size < 0 {
+		return nil, 0, errors.New("invalid format")
+	}
+
+	return
 }
 
 func BackupPaths(paths []string) error {

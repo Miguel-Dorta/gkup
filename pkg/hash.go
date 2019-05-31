@@ -30,15 +30,6 @@ func hashFile(path string) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-func equals(b1, b2 []byte) bool {
-	for i := range b1 {
-		if b1[i] != b2[i] {
-			return false
-		}
-	}
-	return true
-}
-
 /*func getIntSliceFromByteSlice(b []byte) []uint64 {
 	bLen := len(b)
 

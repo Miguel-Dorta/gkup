@@ -30,9 +30,7 @@ Optional args:
 		break
 	case "check":
 		errs := pkg.CheckIntegrity()
-		if len(errs) != 0 {
-			fmt.Printf("%+v\n", errs)
-		}
+		fmt.Printf("Errors found: %d\n", errs)
 		break
 	case "backup":
 		if len(os.Args) != 4 {
