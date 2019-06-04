@@ -3,6 +3,7 @@ package pkg
 import (
 	"crypto/sha1"
 	"crypto/sha256"
+	"fmt"
 	"hash"
 	"io"
 	"os"
@@ -11,7 +12,7 @@ import (
 func hashFile(path string) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot open file \"%s\": %s", path, err.Error())
 	}
 	defer f.Close()
 
@@ -24,7 +25,7 @@ func hashFile(path string) ([]byte, error) {
 
 	// Hash it
 	if _, err := io.Copy(h, f); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error hashing file \"%s\": %s", path, err.Error())
 	}
 
 	return h.Sum(nil), nil

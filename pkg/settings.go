@@ -9,6 +9,7 @@ var (
 	HashAlgorithm = "sha256"
 	RepoPath = ""
 	BufferSize = 4*1024*1024
+	OmitErrors = false
 )
 
 type settings struct {

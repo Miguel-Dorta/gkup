@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 )
 
@@ -28,8 +29,12 @@ func writeBackup(path string, d dir) error {
 		Files: d.Files,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot compose backup: %s", err.Error())
 	}
 
-	return ioutil.WriteFile(path, data, 0600)
+	if err = ioutil.WriteFile(path, data, 0600); err != nil {
+		return fmt.Errorf("cannot write backup to \"%s\": %s", path, err.Error())
+	}
+
+	return nil
 }

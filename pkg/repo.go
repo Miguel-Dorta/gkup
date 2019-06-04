@@ -155,35 +155,49 @@ func BackupPaths(paths []string) error {
 
 	//TODO check for duplicates
 
-	d := dir{
+	root := dir{
 		Files: make([]file, 0, 10),
 		Dirs: make([]dir, 0, 10),
 	}
 	for _, path := range paths {
 		stat, err := os.Stat(path)
 		if err != nil {
-			return err //TODO check if exists
+			if os.IsNotExist(err) {
+				return fmt.Errorf("\"%s\" not found", path)
+			}
+			return err
 		}
 		mode := stat.Mode()
 		name := stat.Name()
 
 		if mode.IsDir() {
-			child, err := listFilesRecursive(path, name)
+			child, err := listFilesRecursive(path)
 			if err != nil {
-				return err
+				if OmitErrors {
+					os.Stderr.WriteString(err.Error())
+					continue
+				} else {
+					return err
+				}
 			}
-			d.Dirs = append(d.Dirs, child)
+			root.Dirs = append(root.Dirs, child)
+			// TODO I'm not adding the children to the backup, am I?
 		} else if mode.IsRegular() {
 			child, err := getFile(path)
 			if err != nil {
-				return err
+				if OmitErrors {
+					os.Stderr.WriteString(err.Error())
+					continue
+				} else {
+					return err
+				}
 			}
 
 			if err = addFile(child); err != nil {
 				return err
 			}
 
-			d.Files = append(d.Files, child)
+			root.Files = append(root.Files, child)
 		} else {
 			// TODO symlinks and other things
 		}
@@ -197,7 +211,7 @@ func BackupPaths(paths []string) error {
 		now.Hour(),
 		now.Minute(),
 		now.Second(),
-	), d)
+	), root)
 }
 
 func RestoreBackup(date, restoreTo string) error {
@@ -257,8 +271,7 @@ func restoreDir(d dir, pathToRestore string) (err error) {
 func getPathInRepo(f file) string {
 	hashStr := hex.EncodeToString(f.Hash)
 	return filepath.Join(
-		RepoPath,
-		"files",
+		filesFolder,
 		hashStr[:2],
 		fmt.Sprintf("%s-%d", hashStr, f.Size),
 	)
@@ -271,12 +284,11 @@ func addFile(f file) error {
 	if _, err := os.Stat(pathToSave); err == nil {
 		return nil
 	} else if !os.IsNotExist(err) {
-		return err
+		return fmt.Errorf("cannot get information of \"%s\": %s", pathToSave, err.Error())
 	}
 
-	err := copyFile(f.realPath, pathToSave)
-	if err != nil {
-		return err //TODO critical failure. If fails during copy, there'll be a ghost file
+	if err := copyFile(f.realPath, pathToSave); err != nil {
+		return err
 	}
 	return nil
 }

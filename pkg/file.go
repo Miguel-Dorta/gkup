@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,35 +20,44 @@ type file struct {
 	realPath string //Private so it won't be saved in the backup.json
 }
 
-func listFilesRecursive(path, name string) (dir, error) {
-	childs, err := listDir(path)
+func listFilesRecursive(path string) (dir, error) {
+	children, err := listDir(path)
 	if err != nil {
-		return dir{}, err //TODO
+		return dir{}, fmt.Errorf("cannot list \"%s\": %s", path, err.Error())
 	}
 
 	d := dir {
-		Name: name,
-		// Avoid unnecessary slice resizing
+		Name: filepath.Base(path),
 		Files: make([]file, 0, 10),
 		Dirs: make([]dir, 0, 10),
 	}
 
-	for _, child := range childs {
+	for _, child := range children {
 		// Avoid unnecessary function calls
 		childMode := child.Mode()
 		childName := child.Name()
 		childPath := filepath.Join(path, childName)
 
 		if childMode.IsDir() {
-			subChild, err := listFilesRecursive(childPath, childName)
+			subChild, err := listFilesRecursive(childPath)
 			if err != nil {
-				return dir{}, err //TODO if omit error is active, return slice, else stop function ¿maybe?
+				if OmitErrors {
+					os.Stderr.WriteString(err.Error())
+					continue
+				} else {
+					return dir{}, err
+				}
 			}
 			d.Dirs = append(d.Dirs, subChild)
 		} else if childMode.IsRegular() {
 			subChild, err := getFile(childPath)
 			if err != nil {
-				return dir{}, err //TODO if omit error is active, return slice, else stop function ¿maybe?
+				if OmitErrors {
+					os.Stderr.WriteString(err.Error())
+					continue
+				} else {
+					return dir{}, err
+				}
 			}
 			d.Files = append(d.Files, subChild)
 		} else {
@@ -58,40 +68,53 @@ func listFilesRecursive(path, name string) (dir, error) {
 	return d, nil
 }
 
-func getFile(path string) (f file, err error) {
+func getFile(path string) (file, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
-		return
+		return file{}, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
 	}
-	f.Size = stat.Size()
 
-	f.Hash, err = hashFile(path)
+	hash, err := hashFile(path)
 	if err != nil {
-		return
+		return file{}, err
 	}
 
-	f.realPath = path
-	f.Name = filepath.Base(path)
-	return
+	return file{
+		Name: filepath.Base(path),
+		Size: stat.Size(),
+		Hash: hash,
+		realPath: path,
+	}, nil
 }
 
 var copyBuf = make([]byte, BufferSize)
-func copyFile(origin, destiny string) (err error) {
+func copyFile(origin, destiny string) error {
 	originFile, err := os.Open(origin)
 	if err != nil {
-		return
+		return fmt.Errorf("cannot open file \"%s\": %s", origin, err.Error())
 	}
 	defer originFile.Close()
 
 	destinyFile, err := os.Create(destiny)
 	if err != nil {
-		return
+		return fmt.Errorf("cannot create file in \"%s\": %s", destiny, err.Error())
 	}
 	defer destinyFile.Close()
 
-	_, err = io.CopyBuffer(destinyFile, originFile, copyBuf)
-	if err != nil {
-		return
+	if _, err = io.CopyBuffer(destinyFile, originFile, copyBuf); err != nil {
+		var abortError = fmt.Errorf("ABORTING BACKUP")
+
+		fmt.Fprintf(os.Stderr, "Error copying file from \"%s\" to \"%s\"\n")
+		os.Stderr.WriteString("-> Trying to close it: ")
+		if err = destinyFile.Close(); err == nil {
+			os.Stderr.WriteString("SUCCESS\n-> Trying to remove ghost file: ")
+			if err = os.Remove(destiny); err == nil {
+				os.Stderr.WriteString("SUCCESS\n")
+				return abortError
+			}
+		}
+		fmt.Fprintf(os.Stderr, "FAILURE: %s\n-> There is a corrupt file in %s\n-> Please, remove it\n", err.Error(), destiny)
+		return abortError
 	}
 
 	return destinyFile.Close()
