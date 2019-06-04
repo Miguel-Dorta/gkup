@@ -90,7 +90,11 @@ func copyFile(origin, destiny string) (err error) {
 	defer destinyFile.Close()
 
 	_, err = io.CopyBuffer(destinyFile, originFile, copyBuf)
-	return
+	if err != nil {
+		return
+	}
+
+	return destinyFile.Close()
 }
 
 func listDir(path string) ([]os.FileInfo, error) {
