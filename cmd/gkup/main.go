@@ -31,23 +31,35 @@ Optional args:
 		}
 		break
 	case "check":
+		err := repo.LoadSettings()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 		errs := repo.CheckIntegrity()
 		fmt.Printf("Errors found: %d\n", errs)
 		break
 	case "backup":
+		err := repo.LoadSettings()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 		if len(os.Args) != 4 {
 			fmt.Println("Nothing to backup - aborting!")
 		}
-		err := repo.BackupPaths(os.Args[3:])
+		err = repo.BackupPaths(os.Args[3:])
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 		break
 	case "restore":
+		err := repo.LoadSettings()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 		if len(os.Args) != 5 {
 			fmt.Println("Insufficient arguments - aborting!")
 		}
-		err := repo.RestoreBackup(os.Args[3], os.Args[4])
+		err = repo.RestoreBackup(os.Args[3], os.Args[4])
 		if err != nil {
 			fmt.Println(err.Error())
 		}

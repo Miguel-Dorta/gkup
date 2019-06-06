@@ -175,6 +175,10 @@ func getHashSize(fileName string) (hash []byte, size int64, err error) {
 }
 
 func (r *Repo) BackupPaths(paths []string) error {
+	if r.sett == nil {
+		return errors.New("settings not loaded")
+	}
+
 	now := time.Now() //Save the moment where the backup started
 
 	root := dir{
@@ -239,6 +243,10 @@ func (r *Repo) BackupPaths(paths []string) error {
 }
 
 func (r *Repo) RestoreBackup(date, restoreTo string) error {
+	if r.sett == nil {
+		return errors.New("settings not loaded")
+	}
+
 	var b backup
 	{
 		backupsList, err := listDir(r.backupFolder)
