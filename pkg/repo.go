@@ -153,8 +153,6 @@ func getHashSize(fileName string) (hash []byte, size int64, err error) {
 func BackupPaths(paths []string) error {
 	now := time.Now() //Save the moment where the backup started
 
-	//TODO check for duplicates
-
 	root := dir{
 		Files: make([]file, 0, 10),
 		Dirs: make([]dir, 0, 10),
