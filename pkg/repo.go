@@ -194,7 +194,12 @@ func BackupPaths(paths []string) error {
 			}
 
 			if err = addFile(child); err != nil {
-				return err
+				if OmitErrors {
+					os.Stderr.WriteString(err.Error())
+					continue
+				} else {
+					return err
+				}
 			}
 
 			root.Files = append(root.Files, child)

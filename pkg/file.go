@@ -1,10 +1,12 @@
 package pkg
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type dir struct {
@@ -102,19 +104,24 @@ func copyFile(origin, destiny string) error {
 	defer destinyFile.Close()
 
 	if _, err = io.CopyBuffer(destinyFile, originFile, copyBuf); err != nil {
-		var abortError = fmt.Errorf("ABORTING BACKUP")
+		var errStr strings.Builder
+		errStr.Grow(1000)
 
-		fmt.Fprintf(os.Stderr, "Error copying file from \"%s\" to \"%s\"\n")
-		os.Stderr.WriteString("-> Trying to close it: ")
+		stringBuilderAppend(&errStr,
+			"Error copying file from \"", origin, "\" to \"", destiny, "\": ", err.Error(),
+			"\n-> DESCRIPTION: ", err.Error(),
+			"\n-> CLOSED: ",
+		)
 		if err = destinyFile.Close(); err == nil {
-			os.Stderr.WriteString("SUCCESS\n-> Trying to remove ghost file: ")
+			errStr.WriteString("yes - REMOVED: ")
 			if err = os.Remove(destiny); err == nil {
-				os.Stderr.WriteString("SUCCESS\n")
-				return abortError
+				errStr.WriteString("yes")
+				return errors.New(errStr.String())
 			}
 		}
-		fmt.Fprintf(os.Stderr, "FAILURE: %s\n-> There is a corrupt file in %s\n-> Please, remove it\n", err.Error(), destiny)
-		return abortError
+
+		stringBuilderAppend(&errStr, "no\n-> There is a corrupt file in \"", destiny, "\". Please, remove it")
+		return errors.New(errStr.String())
 	}
 
 	return destinyFile.Close()
