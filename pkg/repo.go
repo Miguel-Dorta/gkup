@@ -231,7 +231,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 		}
 	}
 
-	return writeBackup(fmt.Sprintf(
+	return writeBackup(filepath.Join(r.backupFolder, fmt.Sprintf(
 		"%04d-%02d-%02d_%02d-%02d-%02d.json",
 		now.Year(),
 		now.Month(),
@@ -239,7 +239,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 		now.Hour(),
 		now.Minute(),
 		now.Second(),
-	), root)
+	)), root)
 }
 
 func (r *Repo) RestoreBackup(date, restoreTo string) error {
