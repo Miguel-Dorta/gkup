@@ -172,7 +172,7 @@ func BackupPaths(paths []string) error {
 			child, err := listFilesRecursive(path)
 			if err != nil {
 				if OmitErrors {
-					os.Stderr.WriteString(err.Error())
+					os.Stderr.WriteString(err.Error() + "\n")
 					continue
 				} else {
 					return err
@@ -183,7 +183,7 @@ func BackupPaths(paths []string) error {
 			child, err := getFile(path)
 			if err != nil {
 				if OmitErrors {
-					os.Stderr.WriteString(err.Error())
+					os.Stderr.WriteString(err.Error() + "\n")
 					continue
 				} else {
 					return err
@@ -192,7 +192,7 @@ func BackupPaths(paths []string) error {
 
 			if err = addFile(child); err != nil {
 				if OmitErrors {
-					os.Stderr.WriteString(err.Error())
+					os.Stderr.WriteString(err.Error() + "\n")
 					continue
 				} else {
 					return err
@@ -219,55 +219,64 @@ func BackupPaths(paths []string) error {
 func RestoreBackup(date, restoreTo string) error {
 	var b backup
 	{
-		backupPath := filepath.Join(RepoPath, "backups")
-		backupList, err := listDir(backupPath)
+		backupsList, err := listDir(backupFolder)
 		if err != nil {
 			return err
 		}
 
-		found := false
-		for _, bac := range backupList {
-			name := bac.Name()
-			if strings.HasPrefix(name, date) {
-				backupPath = filepath.Join(backupPath, name)
-				found = true
+		var backupPath string
+		for _, bac := range backupsList {
+			if strings.HasPrefix(bac.Name(), date) {
+				backupPath = filepath.Join(backupFolder, bac.Name())
 				break
 			}
 		}
 
-		if !found {
-			return fmt.Errorf("") //TODO not found
+		if backupPath == "" {
+			return errors.New("backupPath not found")
 		}
 
-		b, err = readBackup(backupPath)
-		if err != nil {
+		if b, err = readBackup(backupPath); err != nil {
 			return err
 		}
 	}
 
 	//TODO check versioning
 
-	return restoreDir(dir{Files: b.Files, Dirs: b.Dirs}, restoreTo)
+	if err := restoreDir(dir{Files: b.Files, Dirs: b.Dirs}, restoreTo); err != nil {
+		return err
+	}
+	return nil
 }
 
-func restoreDir(d dir, pathToRestore string) (err error) {
+func restoreDir(d dir, pathToRestore string) error {
 	for _, childFile := range d.Files {
-		if err = copyFile(getPathInRepo(childFile), filepath.Join(pathToRestore, childFile.Name)); err != nil {
-			return
+		if err := copyFile(getPathInRepo(childFile), filepath.Join(pathToRestore, childFile.Name)); err != nil {
+			if OmitErrors {
+				os.Stderr.WriteString(err.Error() + "\n")
+				continue
+			} else {
+				return err
+			}
 		}
 	}
 
 	for _, childDir := range d.Dirs {
 		childPath := filepath.Join(pathToRestore, childDir.Name)
-		if err = os.Mkdir(childPath, 0700); err != nil {
-			return
+		if err := os.Mkdir(childPath, 0700); err != nil {
+			if OmitErrors {
+				fmt.Fprintf(os.Stderr, "Error restoring folder \"%s\": %s\n", childPath, err.Error())
+				continue
+			} else {
+				return err
+			}
 		}
-		if err = restoreDir(childDir, childPath); err != nil {
-			return
+		if err := restoreDir(childDir, childPath); err != nil {
+			return err
 		}
 	}
 
-	return
+	return nil
 }
 
 func getPathInRepo(f file) string {

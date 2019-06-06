@@ -12,14 +12,18 @@ type backup struct {
 	Files []file   `json:files`
 }
 
-func readBackup(path string) (b backup, err error) {
+func readBackup(path string) (backup, error) {
+	var b backup
+
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return
+		return b, fmt.Errorf("cannot read backup file \"%s\": %s", path, err.Error())
 	}
 
-	err = json.Unmarshal(data, &b)
-	return
+	if err = json.Unmarshal(data, &b); err != nil {
+		return backup{}, fmt.Errorf("error parsing backup: %s", err.Error())
+	}
+	return b, nil
 }
 
 func writeBackup(path string, d dir) error {
