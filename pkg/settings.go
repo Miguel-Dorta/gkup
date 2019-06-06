@@ -19,8 +19,8 @@ var (
 )
 
 type settings struct {
-	Version       string `toml:version`
-	HashAlgorithm string `toml:hashAlgorithm`
+	Version       string `toml:"version"`
+	HashAlgorithm string `toml:"hashAlgorithm"`
 }
 
 func saveSettings(path, hashAlgorithm string) error {
