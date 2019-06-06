@@ -13,11 +13,37 @@ import (
 	"time"
 )
 
+const (
+	backupFolderName = "backup"
+	filesFolderName  = "files"
+)
+
+type Repo struct {
+	sett settings
+	path, backupFolder, filesFolder, settingsPath string
+}
+
 var (
 	backupFolder = "backup"
 	filesFolder = "files"
 	settingsPath = "settings.toml"
 )
+
+func NewRepo(repoPath string) (Repo, error) {
+	r := Repo{
+		path: repoPath,
+		backupFolder: filepath.Join(repoPath, backupFolderName),
+		filesFolder: filepath.Join(repoPath, filesFolderName),
+		settingsPath: filepath.Join(repoPath, settingsFilename),
+	}
+
+	sett, err := loadSettings(r.settingsPath)
+	if err != nil {
+		return Repo{}, err
+	}
+	r.sett = sett
+	return r, nil
+}
 
 func CreateRepo() error {
 	// Check if it's a directory
