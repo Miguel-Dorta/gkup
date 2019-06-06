@@ -61,6 +61,14 @@ func listFilesRecursive(path string) (dir, error) {
 					return dir{}, err
 				}
 			}
+			if err = addFile(subChild); err != nil {
+				if OmitErrors {
+					os.Stderr.WriteString(err.Error())
+					continue
+				} else {
+					return dir{}, err
+				}
+			}
 			d.Files = append(d.Files, subChild)
 		} else {
 			// TODO symlinks and other cases

@@ -181,7 +181,6 @@ func BackupPaths(paths []string) error {
 				}
 			}
 			root.Dirs = append(root.Dirs, child)
-			// TODO I'm not adding the children to the backup, am I?
 		} else if mode.IsRegular() {
 			child, err := getFile(path)
 			if err != nil {
