@@ -14,8 +14,6 @@ var (
 	Version string
 	ReadSymLink = false
 	Verbose = false
-	HashAlgorithm = "sha256"
-	RepoPath = ""
 	BufferSize = 4*1024*1024
 	OmitErrors = false
 )
@@ -25,12 +23,16 @@ type settings struct {
 	HashAlgorithm string `toml:hashAlgorithm`
 }
 
-func generateSettingsToml() (data []byte) {
-	data, _ = toml.Marshal(settings{
+func saveSettings(path, hashAlgorithm string) error {
+	data, _ := toml.Marshal(settings{
 		Version:       Version,
-		HashAlgorithm: HashAlgorithm,
+		HashAlgorithm: hashAlgorithm,
 	})
-	return
+
+	if err := ioutil.WriteFile(path, data, 0600); err != nil {
+		return fmt.Errorf("cannot write settings in \"%s\": %s", path, err.Error())
+	}
+	return nil
 }
 
 func loadSettings(path string) (sett settings, err error) {

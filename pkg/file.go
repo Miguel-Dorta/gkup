@@ -22,7 +22,8 @@ type file struct {
 	realPath string //Private so it won't be saved in the backup.json
 }
 
-func listFilesRecursive(path string) (dir, error) {
+// TODO this function SHOULD NOT be member of Repo, fix it
+func (r *Repo) listFilesRecursive(path string) (dir, error) {
 	children, err := listDir(path)
 	if err != nil {
 		return dir{}, fmt.Errorf("cannot list \"%s\": %s", path, err.Error())
@@ -41,7 +42,7 @@ func listFilesRecursive(path string) (dir, error) {
 		childPath := filepath.Join(path, childName)
 
 		if childMode.IsDir() {
-			subChild, err := listFilesRecursive(childPath)
+			subChild, err := r.listFilesRecursive(childPath)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error())
@@ -52,7 +53,7 @@ func listFilesRecursive(path string) (dir, error) {
 			}
 			d.Dirs = append(d.Dirs, subChild)
 		} else if childMode.IsRegular() {
-			subChild, err := getFile(childPath)
+			subChild, err := r.getFile(childPath)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error())
@@ -61,7 +62,7 @@ func listFilesRecursive(path string) (dir, error) {
 					return dir{}, err
 				}
 			}
-			if err = addFile(subChild); err != nil {
+			if err = r.addFile(subChild); err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error())
 					continue
@@ -78,13 +79,13 @@ func listFilesRecursive(path string) (dir, error) {
 	return d, nil
 }
 
-func getFile(path string) (file, error) {
+func (r *Repo) getFile(path string) (file, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return file{}, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
 	}
 
-	hash, err := hashFile(path)
+	hash, err := hashFile(path, r.sett.HashAlgorithm)
 	if err != nil {
 		return file{}, err
 	}

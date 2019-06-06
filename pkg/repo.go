@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -19,83 +18,82 @@ const (
 )
 
 type Repo struct {
-	sett settings
+	sett *settings
 	path, backupFolder, filesFolder, settingsPath string
 }
 
-var (
-	backupFolder = "backup"
-	filesFolder = "files"
-	settingsPath = "settings.toml"
-)
-
-func NewRepo(repoPath string) (Repo, error) {
-	r := Repo{
+func NewRepo(repoPath string) Repo {
+	return Repo{
 		path: repoPath,
 		backupFolder: filepath.Join(repoPath, backupFolderName),
 		filesFolder: filepath.Join(repoPath, filesFolderName),
 		settingsPath: filepath.Join(repoPath, settingsFilename),
 	}
-
-	sett, err := loadSettings(r.settingsPath)
-	if err != nil {
-		return Repo{}, err
-	}
-	r.sett = sett
-	return r, nil
 }
 
-func CreateRepo() error {
+func (r *Repo) LoadSettings() error {
+	sett, err := loadSettings(r.settingsPath)
+	if err != nil {
+		return err
+	}
+	r.sett = &sett
+	return nil
+}
+
+func (r *Repo) Create() error {
 	// Check if it's a directory
-	if stat, err := os.Stat(RepoPath); err != nil {
+	if stat, err := os.Stat(r.path); err != nil {
 		if !os.IsNotExist(err) {
-			return fmt.Errorf("error getting stats from \"%s\": %s", RepoPath, err.Error())
+			return fmt.Errorf("error getting stats from \"%s\": %s", r.path, err.Error())
 		}
 		// If not exists, create it
-		if err = os.MkdirAll(RepoPath, 0700); err != nil {
-			return fmt.Errorf("error creating directory \"%s\": %s", RepoPath, err.Error())
+		if err = os.MkdirAll(r.path, 0700); err != nil {
+			return fmt.Errorf("error creating directory \"%s\": %s", r.path, err.Error())
 		}
 	} else if !stat.IsDir() {
 		//TODO read symlink
-		return fmt.Errorf("\"%s\" is not a directory", RepoPath)
+		return fmt.Errorf("\"%s\" is not a directory", r.path)
 	}
 
 	// Check if it's empty
-	if children, err := listDir(RepoPath); err != nil {
-		return fmt.Errorf("error listing \"%s\": %s", RepoPath, err.Error())
+	if children, err := listDir(r.path); err != nil {
+		return fmt.Errorf("error listing \"%s\": %s", r.path, err.Error())
 	} else if len(children) != 0 {
-		return fmt.Errorf("\"%s\" is not empty", RepoPath)
+		return fmt.Errorf("\"%s\" is not empty", r.path)
 	}
 
 	// Make backup folder
-	if err := os.Mkdir(backupFolder, 0700); err != nil {
-		return fmt.Errorf("error creating subdirectory \"%s\": %s", backupFolder, err.Error())
+	if err := os.Mkdir(r.backupFolder, 0700); err != nil {
+		return fmt.Errorf("error creating subdirectory \"%s\": %s", r.backupFolder, err.Error())
 	}
 
 	// Make file folder and subforders
-	if err := os.Mkdir(filesFolder, 0700); err != nil {
-		return fmt.Errorf("error creating subdirectory \"%s\": %s", filesFolder, err.Error())
+	if err := os.Mkdir(r.filesFolder, 0700); err != nil {
+		return fmt.Errorf("error creating subdirectory \"%s\": %s", r.filesFolder, err.Error())
 	}
 	for i:=0x0; i<=0xff; i++ {
-		path := filepath.Join(filesFolder, fmt.Sprintf("%02x", i))
+		path := filepath.Join(r.filesFolder, fmt.Sprintf("%02x", i))
 		if err := os.Mkdir(path, 0700); err != nil {
 			return fmt.Errorf("error creating subdirectory \"%s\": %s", path, err.Error())
 		}
 	}
 
 	// Write settings.toml
-	if err := ioutil.WriteFile(settingsPath, generateSettingsToml(), 0600); err != nil {
-		return fmt.Errorf("error writing settings: %s", err.Error())
+	if err := saveSettings(r.settingsPath, r.sett.HashAlgorithm); err != nil {
+		return err
 	}
 	return nil
 }
 
-func CheckIntegrity() (errs int) {
-	//TODO load settings
+func (r *Repo) CheckIntegrity() (errs int) {
+	if r.sett == nil {
+		fmt.Fprintln(os.Stderr, "Error: settings not loaded")
+		return 1
+	}
 
 	// l1 is the list of elements in repo/files.
 	// It should contain folders named from 00 to ff.
-	l1, err := listDir(filesFolder)
+	l1, err := listDir(r.filesFolder)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error accessing files. Aborting...")
 		return 1
@@ -105,7 +103,7 @@ func CheckIntegrity() (errs int) {
 		if !c1.IsDir() {
 			continue
 		}
-		c1Path := filepath.Join(filesFolder, c1.Name())
+		c1Path := filepath.Join(r.filesFolder, c1.Name())
 
 		// l2 is the list of elements in repo/files/c1.
 		// It should contain the files named like <hash_hex>-<size_bytes>
@@ -138,7 +136,7 @@ func CheckIntegrity() (errs int) {
 				continue
 			}
 
-			if newHash, err := hashFile(c2Path); err != nil {
+			if newHash, err := hashFile(c2Path, r.sett.HashAlgorithm); err != nil {
 				fmt.Fprintf(os.Stderr, "cannot hash \"%s\"\n", c2Path)
 				errs++
 				continue
@@ -176,7 +174,7 @@ func getHashSize(fileName string) (hash []byte, size int64, err error) {
 	return
 }
 
-func BackupPaths(paths []string) error {
+func (r *Repo) BackupPaths(paths []string) error {
 	now := time.Now() //Save the moment where the backup started
 
 	root := dir{
@@ -192,10 +190,9 @@ func BackupPaths(paths []string) error {
 			return err
 		}
 		mode := stat.Mode()
-		name := stat.Name()
 
 		if mode.IsDir() {
-			child, err := listFilesRecursive(path)
+			child, err := r.listFilesRecursive(path)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error() + "\n")
@@ -206,7 +203,7 @@ func BackupPaths(paths []string) error {
 			}
 			root.Dirs = append(root.Dirs, child)
 		} else if mode.IsRegular() {
-			child, err := getFile(path)
+			child, err := r.getFile(path)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error() + "\n")
@@ -216,7 +213,7 @@ func BackupPaths(paths []string) error {
 				}
 			}
 
-			if err = addFile(child); err != nil {
+			if err = r.addFile(child); err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error() + "\n")
 					continue
@@ -242,10 +239,10 @@ func BackupPaths(paths []string) error {
 	), root)
 }
 
-func RestoreBackup(date, restoreTo string) error {
+func (r *Repo) RestoreBackup(date, restoreTo string) error {
 	var b backup
 	{
-		backupsList, err := listDir(backupFolder)
+		backupsList, err := listDir(r.backupFolder)
 		if err != nil {
 			return err
 		}
@@ -253,7 +250,7 @@ func RestoreBackup(date, restoreTo string) error {
 		var backupPath string
 		for _, bac := range backupsList {
 			if strings.HasPrefix(bac.Name(), date) {
-				backupPath = filepath.Join(backupFolder, bac.Name())
+				backupPath = filepath.Join(r.backupFolder, bac.Name())
 				break
 			}
 		}
@@ -269,15 +266,15 @@ func RestoreBackup(date, restoreTo string) error {
 
 	//TODO check versioning
 
-	if err := restoreDir(dir{Files: b.Files, Dirs: b.Dirs}, restoreTo); err != nil {
+	if err := r.restoreDir(dir{Files: b.Files, Dirs: b.Dirs}, restoreTo); err != nil {
 		return err
 	}
 	return nil
 }
 
-func restoreDir(d dir, pathToRestore string) error {
+func (r *Repo) restoreDir(d dir, pathToRestore string) error {
 	for _, childFile := range d.Files {
-		if err := copyFile(getPathInRepo(childFile), filepath.Join(pathToRestore, childFile.Name)); err != nil {
+		if err := copyFile(r.getPathInRepo(childFile), filepath.Join(pathToRestore, childFile.Name)); err != nil {
 			if OmitErrors {
 				os.Stderr.WriteString(err.Error() + "\n")
 				continue
@@ -297,7 +294,7 @@ func restoreDir(d dir, pathToRestore string) error {
 				return err
 			}
 		}
-		if err := restoreDir(childDir, childPath); err != nil {
+		if err := r.restoreDir(childDir, childPath); err != nil {
 			return err
 		}
 	}
@@ -305,17 +302,17 @@ func restoreDir(d dir, pathToRestore string) error {
 	return nil
 }
 
-func getPathInRepo(f file) string {
+func (r *Repo) getPathInRepo(f file) string {
 	hashStr := hex.EncodeToString(f.Hash)
 	return filepath.Join(
-		filesFolder,
+		r.filesFolder,
 		hashStr[:2],
 		fmt.Sprintf("%s-%d", hashStr, f.Size),
 	)
 }
 
-func addFile(f file) error {
-	pathToSave := getPathInRepo(f)
+func (r *Repo) addFile(f file) error {
+	pathToSave := r.getPathInRepo(f)
 
 	// If file already exists, do nothing. If exists but there's an error, return it
 	if _, err := os.Stat(pathToSave); err == nil {
