@@ -37,11 +37,9 @@ func (r *Repo) listFilesRecursive(path string) (dir, error) {
 
 	for _, child := range children {
 		// Avoid unnecessary function calls
-		childMode := child.Mode()
-		childName := child.Name()
-		childPath := filepath.Join(path, childName)
+		childPath := filepath.Join(path, child.Name())
 
-		if childMode.IsDir() {
+		if child.Mode().IsDir() {
 			subChild, err := r.listFilesRecursive(childPath)
 			if err != nil {
 				if OmitErrors {
@@ -52,7 +50,7 @@ func (r *Repo) listFilesRecursive(path string) (dir, error) {
 				}
 			}
 			d.Dirs = append(d.Dirs, subChild)
-		} else if childMode.IsRegular() {
+		} else if child.Mode().IsRegular() {
 			subChild, err := r.getFile(childPath)
 			if err != nil {
 				if OmitErrors {

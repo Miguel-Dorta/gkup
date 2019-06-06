@@ -189,9 +189,8 @@ func (r *Repo) BackupPaths(paths []string) error {
 			}
 			return err
 		}
-		mode := stat.Mode()
 
-		if mode.IsDir() {
+		if stat.Mode().IsDir() {
 			child, err := r.listFilesRecursive(path)
 			if err != nil {
 				if OmitErrors {
@@ -202,7 +201,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 				}
 			}
 			root.Dirs = append(root.Dirs, child)
-		} else if mode.IsRegular() {
+		} else if stat.Mode().IsRegular() {
 			child, err := r.getFile(path)
 			if err != nil {
 				if OmitErrors {
