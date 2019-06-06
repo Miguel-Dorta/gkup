@@ -13,39 +13,44 @@ func main() {
 Optional args:
     create - <sha256/sha1>
     backup - <path-to-backup>
-    restore - <which-backup-restore>`,
+    restore - <which-backup-restore> <path-to-restore>`,
 		)
 		os.Exit(0)
 	}
-	pkg.RepoPath = os.Args[2]
+
+	repo := pkg.NewRepo(os.Args[2])
 	switch os.Args[1] {
 	case "create":
+		hashAlg := "sha256"
 		if len(os.Args) == 4 {
-			pkg.HashAlgorithm = os.Args[3]
+			hashAlg = os.Args[3]
 		}
-		err := pkg.CreateRepo()
+		err := repo.Create(hashAlg)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 		break
 	case "check":
-		errs := pkg.CheckIntegrity()
+		errs := repo.CheckIntegrity()
 		fmt.Printf("Errors found: %d\n", errs)
 		break
 	case "backup":
 		if len(os.Args) != 4 {
 			fmt.Println("Nothing to backup - aborting!")
 		}
-		err := pkg.BackupPaths([]string{os.Args[3]})
+		err := repo.BackupPaths(os.Args[3:])
 		if err != nil {
-			panic(err)
+			fmt.Println(err.Error())
 		}
 		break
 	case "restore":
-		if len(os.Args) != 4 {
-			fmt.Println("Nothing to restore - aborting!")
+		if len(os.Args) != 5 {
+			fmt.Println("Insufficient arguments - aborting!")
 		}
-
+		err := repo.RestoreBackup(os.Args[3], os.Args[4])
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 		break
 	default:
 		fmt.Printf("Command not found!")

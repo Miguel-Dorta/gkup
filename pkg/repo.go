@@ -40,7 +40,7 @@ func (r *Repo) LoadSettings() error {
 	return nil
 }
 
-func (r *Repo) Create() error {
+func (r *Repo) Create(hashAlgorithm string) error {
 	// Check if it's a directory
 	if stat, err := os.Stat(r.path); err != nil {
 		if !os.IsNotExist(err) {
@@ -79,7 +79,7 @@ func (r *Repo) Create() error {
 	}
 
 	// Write settings.toml
-	if err := saveSettings(r.settingsPath, r.sett.HashAlgorithm); err != nil {
+	if err := saveSettings(r.settingsPath, hashAlgorithm); err != nil {
 		return err
 	}
 	return nil
