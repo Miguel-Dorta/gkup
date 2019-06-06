@@ -1,0 +1,33 @@
+env:
+  - GO111MODULE=on
+builds:
+  - main: cmd/gkup/main.go
+    binary: gkup
+    ldflags: -X github.com/Miguel-Dorta/gkup/pkg.Version={{.Version}}
+    goos:
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - 386
+      - arm
+      - arm64
+    goarm:
+      - 5
+      - 6
+      - 7
+    ignore:
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+archive:
+  format: tar.gz
+  format_overrides:
+    - goos: windows
+      format: zip
+  replacements:
+    amd64: x86-64
+    386: x86
+    darwin: MacOS
