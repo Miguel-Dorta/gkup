@@ -9,7 +9,9 @@ import (
 	"os"
 )
 
-func hashFile(path, hashAlgorithm string) ([]byte, error) {
+var HashAlgorithm = "sha256"
+
+func hashFile(path string) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open file \"%s\": %s", path, err.Error())
@@ -17,7 +19,7 @@ func hashFile(path, hashAlgorithm string) ([]byte, error) {
 	defer f.Close()
 
 	var h hash.Hash
-	if hashAlgorithm == "sha1" {
+	if HashAlgorithm == "sha1" {
 		h = sha1.New()
 	} else {
 		h = sha256.New()

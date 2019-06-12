@@ -51,7 +51,7 @@ func (r *Repo) listFilesRecursive(path string) (dir, error) {
 			}
 			d.Dirs = append(d.Dirs, subChild)
 		} else if child.Mode().IsRegular() {
-			subChild, err := r.getFile(childPath)
+			subChild, err := getFile(childPath) // HMMMMM
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error())
@@ -77,13 +77,13 @@ func (r *Repo) listFilesRecursive(path string) (dir, error) {
 	return d, nil
 }
 
-func (r *Repo) getFile(path string) (file, error) {
+func getFile(path string) (file, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return file{}, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
 	}
 
-	hash, err := hashFile(path, r.sett.HashAlgorithm)
+	hash, err := hashFile(path)
 	if err != nil {
 		return file{}, err
 	}

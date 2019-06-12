@@ -136,7 +136,7 @@ func (r *Repo) CheckIntegrity() (errs int) {
 				continue
 			}
 
-			if newHash, err := hashFile(c2Path, r.sett.HashAlgorithm); err != nil {
+			if newHash, err := hashFile(c2Path); err != nil {
 				fmt.Fprintf(os.Stderr, "cannot hash \"%s\"\n", c2Path)
 				errs++
 				continue
@@ -211,7 +211,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 			}
 			root.Dirs = append(root.Dirs, child)
 		} else if stat.Mode().IsRegular() {
-			child, err := r.getFile(path)
+			child, err := getFile(path)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error() + "\n")
