@@ -21,13 +21,15 @@ builds:
       - goos: windows
         goarch: arm
       - goos: windows
+        goarch: 386
+      - goos: darwin
         goarch: arm64
+      - goos: darwin
+        goarch: 386
 archive:
   format: tar.gz
   format_overrides:
     - goos: windows
       format: zip
   replacements:
-    amd64: x86-64
-    386: x86
-    darwin: MacOS
+    darwin: macOS
