@@ -22,13 +22,13 @@ type file struct {
 	realPath string //Private so it won't be saved in the backup.json
 }
 
-// TODO this function SHOULD NOT be member of Repo, fix it
-func (r *Repo) listFilesRecursive(path string) (dir, error) {
+func listFilesRecursive(path string) (dir, []file, error) {
 	children, err := listDir(path)
 	if err != nil {
-		return dir{}, fmt.Errorf("cannot list \"%s\": %s", path, err.Error())
+		return dir{}, nil, fmt.Errorf("cannot list \"%s\": %s", path, err.Error())
 	}
 
+	var fileList []file
 	d := dir {
 		Name: filepath.Base(path),
 		Files: make([]file, 0, 10),
@@ -36,36 +36,28 @@ func (r *Repo) listFilesRecursive(path string) (dir, error) {
 	}
 
 	for _, child := range children {
-		// Avoid unnecessary function calls
 		childPath := filepath.Join(path, child.Name())
 
 		if child.Mode().IsDir() {
-			subChild, err := r.listFilesRecursive(childPath)
+			subChild, childFiles, err := listFilesRecursive(childPath)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error())
 					continue
 				} else {
-					return dir{}, err
+					return dir{}, nil, err
 				}
 			}
 			d.Dirs = append(d.Dirs, subChild)
+			fileList = append(fileList, childFiles...)
 		} else if child.Mode().IsRegular() {
-			subChild, err := getFile(childPath) // HMMMMM
+			subChild, err := getFile(childPath)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error())
 					continue
 				} else {
-					return dir{}, err
-				}
-			}
-			if err = r.addFile(subChild); err != nil {
-				if OmitErrors {
-					os.Stderr.WriteString(err.Error())
-					continue
-				} else {
-					return dir{}, err
+					return dir{}, nil, err
 				}
 			}
 			d.Files = append(d.Files, subChild)
@@ -74,7 +66,7 @@ func (r *Repo) listFilesRecursive(path string) (dir, error) {
 		}
 	}
 
-	return d, nil
+	return d, append(fileList, d.Files...), nil
 }
 
 func getFile(path string) (file, error) {

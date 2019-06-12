@@ -186,10 +186,13 @@ func (r *Repo) BackupPaths(paths []string) error {
 
 	now := time.Now() //Save the moment where the backup started
 
+	fileList := make([]file, 0, 1000)
 	root := dir{
 		Files: make([]file, 0, 10),
 		Dirs: make([]dir, 0, 10),
 	}
+
+	// List all paths recursively
 	for _, path := range paths {
 		stat, err := os.Stat(path)
 		if err != nil {
@@ -200,7 +203,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 		}
 
 		if stat.Mode().IsDir() {
-			child, err := r.listFilesRecursive(path)
+			child, childFiles, err := listFilesRecursive(path)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error() + "\n")
@@ -210,6 +213,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 				}
 			}
 			root.Dirs = append(root.Dirs, child)
+			fileList = append(fileList, childFiles...)
 		} else if stat.Mode().IsRegular() {
 			child, err := getFile(path)
 			if err != nil {
@@ -220,19 +224,21 @@ func (r *Repo) BackupPaths(paths []string) error {
 					return err
 				}
 			}
-
-			if err = r.addFile(child); err != nil {
-				if OmitErrors {
-					os.Stderr.WriteString(err.Error() + "\n")
-					continue
-				} else {
-					return err
-				}
-			}
-
 			root.Files = append(root.Files, child)
 		} else {
 			// TODO symlinks and other things
+		}
+	}
+
+	// Copy all files to repo
+	for _, f := range append(fileList, root.Files...) {
+		if err := r.addFile(f); err != nil {
+			if OmitErrors {
+				os.Stderr.WriteString(err.Error() + "\n")
+				continue
+			} else {
+				return err
+			}
 		}
 	}
 
