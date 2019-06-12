@@ -123,14 +123,14 @@ func (r *Repo) CheckIntegrity() (errs int) {
 			c2Name := c2.Name()
 			c2Path := filepath.Join(c1Path, c2Name)
 
-			hash, size, err := getHashSize(c2Name)
+			f, err := getFileFromName(c2Name)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error getting info from \"%s\": %s\n", c2Path, err.Error())
 				errs++
 				continue
 			}
 
-			if c2.Size() != size {
+			if c2.Size() != f.Size {
 				fmt.Fprintf(os.Stderr, "sizes don't match in \"%s\"\n", c2Path)
 				errs++
 				continue
@@ -140,7 +140,7 @@ func (r *Repo) CheckIntegrity() (errs int) {
 				fmt.Fprintf(os.Stderr, "cannot hash \"%s\"\n", c2Path)
 				errs++
 				continue
-			} else if bytes.Equal(hash, newHash) {
+			} else if bytes.Equal(f.Hash, newHash) {
 				fmt.Fprintf(os.Stderr, "hashes don't match in \"%s\"\n", c2Path)
 				errs++
 				continue
@@ -150,28 +150,33 @@ func (r *Repo) CheckIntegrity() (errs int) {
 	return errs
 }
 
-func getHashSize(fileName string) (hash []byte, size int64, err error) {
-	size = -1
+func getFileFromName(fileName string) (file, error) {
+	var err error
+	f := file{
+		Name: fileName,
+		Size: -1,
+	}
+
 	for i, b := range fileName {
 		if b != '-' {
 			continue
 		}
 
-		if hash, err = hex.DecodeString(fileName[:i]); err != nil {
-			return nil, 0, fmt.Errorf("cannot decode hash: %s", err.Error())
+		if f.Hash, err = hex.DecodeString(fileName[:i]); err != nil {
+			return file{}, fmt.Errorf("cannot decode hash: %s", err.Error())
 		}
 
-		if size, err = strconv.ParseInt(fileName[i+1:], 10, 64); err != nil {
-			return nil, 0, fmt.Errorf("cannot parse size: %s", err.Error())
+		if f.Size, err = strconv.ParseInt(fileName[i+1:], 10, 64); err != nil {
+			return file{}, fmt.Errorf("cannot parse size: %s", err.Error())
 		}
 		break
 	}
 
-	if hash == nil || size < 0 {
-		return nil, 0, errors.New("invalid format")
+	if f.Hash == nil || f.Size < 0 {
+		return file{}, errors.New("invalid format")
 	}
 
-	return
+	return f, nil
 }
 
 func (r *Repo) BackupPaths(paths []string) error {
