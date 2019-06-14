@@ -1,12 +1,12 @@
 package pkg
 
 import (
-	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -98,6 +98,15 @@ func (r *Repo) CheckIntegrity() (errs int) {
 		fmt.Fprintln(os.Stderr, "Error accessing files. Aborting...")
 		return 1
 	}
+
+	mHasher, err := newMultiHasher(r.sett.HashAlgorithm, BufferSize, runtime.NumCPU())
+	if err != nil {
+		os.Stderr.WriteString(err.Error() + "\n")
+		return 1
+	}
+
+	allFiles := make([]string, 0, 1000)
+
 	// c1 represent a given Child of the list l1
 	for _, c1 := range l1 {
 		if !c1.IsDir() {
@@ -113,40 +122,17 @@ func (r *Repo) CheckIntegrity() (errs int) {
 			errs++
 			continue
 		}
-
 		// c2 represents a given Child of the list l2,
 		// that means, a file in repo/files/c1
 		for _, c2 := range l2 {
 			if !c2.Mode().IsRegular() {
 				continue
 			}
-			c2Name := c2.Name()
-			c2Path := filepath.Join(c1Path, c2Name)
-
-			f, err := getFileFromName(c2Name)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error getting info from \"%s\": %s\n", c2Path, err.Error())
-				errs++
-				continue
-			}
-
-			if c2.Size() != f.Size {
-				fmt.Fprintf(os.Stderr, "sizes don't match in \"%s\"\n", c2Path)
-				errs++
-				continue
-			}
-
-			if newHash, err := hashFile(c2Path); err != nil {
-				fmt.Fprintf(os.Stderr, "cannot hash \"%s\"\n", c2Path)
-				errs++
-				continue
-			} else if bytes.Equal(f.Hash, newHash) {
-				fmt.Fprintf(os.Stderr, "hashes don't match in \"%s\"\n", c2Path)
-				errs++
-				continue
-			}
+			allFiles = append(allFiles, filepath.Join(c1Path, c2.Name()))
 		}
 	}
+
+	errs += mHasher.checkFiles(allFiles)
 	return errs
 }
 

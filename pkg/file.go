@@ -69,25 +69,6 @@ func listFilesRecursive(path string) (dir, []file, error) {
 	return d, append(fileList, d.Files...), nil
 }
 
-func getFile(path string) (file, error) {
-	stat, err := os.Stat(path)
-	if err != nil {
-		return file{}, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
-	}
-
-	hash, err := hashFile(path)
-	if err != nil {
-		return file{}, err
-	}
-
-	return file{
-		Name: filepath.Base(path),
-		Size: stat.Size(),
-		Hash: hash,
-		realPath: path,
-	}, nil
-}
-
 var copyBuf = make([]byte, BufferSize)
 func copyFile(origin, destiny string) error {
 	originFile, err := os.Open(origin)
