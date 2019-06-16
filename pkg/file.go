@@ -51,7 +51,7 @@ func listFilesRecursive(path string) (dir, []*file, error) {
 			d.Dirs = append(d.Dirs, subChild)
 			fileList = append(fileList, childFiles...)
 		} else if child.Mode().IsRegular() {
-			subChild, err := getFile(childPath)
+			subChild, err := getFileNoHash(childPath)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error())
@@ -115,4 +115,18 @@ func listDir(path string) ([]os.FileInfo, error) {
 	defer f.Close()
 
 	return f.Readdir(-1)
+}
+
+func getFileNoHash(path string) (*file, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
+	}
+
+	return &file{
+		Name: filepath.Base(path),
+		Size: stat.Size(),
+		Hash: nil,
+		realPath: path,
+	}, nil
 }

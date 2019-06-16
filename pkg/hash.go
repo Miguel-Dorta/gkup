@@ -12,7 +12,6 @@ import (
 	"hash"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -59,7 +58,7 @@ func newHasher(algorithm string, bufferSize int) (*hasher, error) {
 	}, nil
 }
 
-func (h *hasher) hashFile(path string) ([]byte, error) {
+func (h *hasher) hashPath(path string) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open file \"%s\": %s", path, err.Error())
@@ -74,22 +73,16 @@ func (h *hasher) hashFile(path string) ([]byte, error) {
 }
 
 func (h *hasher) getFile(path string) (*file, error) {
-	stat, err := os.Stat(path)
+	f, err := getFileNoHash(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
 	}
 
-	hash, err := h.hashFile(path)
-	if err != nil {
+	if f.Hash, err = h.hashPath(path); err != nil {
 		return nil, err
 	}
 
-	return &file{
-		Name: filepath.Base(path),
-		Size: stat.Size(),
-		Hash: hash,
-		realPath: path,
-	}, nil
+	return f, nil
 }
 
 func (h *hasher) fileChecker(in *safeStringList, errs *safeCounter, wg sync.WaitGroup) {
@@ -122,7 +115,7 @@ func (h *hasher) fileChecker(in *safeStringList, errs *safeCounter, wg sync.Wait
 			continue
 		}
 
-		hash, err := h.hashFile(*path)
+		hash, err := h.hashPath(*path)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			errs.increase()
@@ -189,6 +182,58 @@ func (mh *multiHasher) getFiles(paths []string) ([]*file, error) {
 		return nil, err
 	}
 	return filesSafe.getList(), nil
+}
+
+func (h *hasher) hashFile(f *file) error {
+	file, err := os.Open(f.realPath)
+	if err != nil {
+		return fmt.Errorf("cannot open file \"%s\": %s", f.realPath, err.Error())
+	}
+	defer file.Close()
+
+	h.hash.Reset()
+	if _, err := io.CopyBuffer(h.hash, file, h.buf); err != nil {
+		return fmt.Errorf("error hashing file \"%s\": %s", f.realPath, err.Error())
+	}
+
+	f.Hash = h.hash.Sum(nil)
+	return nil
+}
+
+func (h *hasher) fileHasher(list *safeFileList) error {
+	for {
+		f := list.next()
+		if f == nil {
+			break
+		}
+
+		if err := h.hashFile(f); err != nil {
+			if OmitErrors {
+				os.Stderr.WriteString(err.Error() + "\n")
+				continue
+			} else {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (mh *multiHasher) hashFiles(files []*file) error {
+	var eg errgroup.Group
+	filesSafe := makeConcurrentFileList(files)
+
+	for _, w := range mh.workers {
+		eg.Go(func() error {
+			return w.fileHasher(filesSafe)
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
 
 /*func getIntSliceFromByteSlice(b []byte) []uint64 {

@@ -10,6 +10,7 @@ type safeStringList struct {
 
 type safeFileList struct {
 	list []*file
+	pos int
 	mutex sync.Mutex
 }
 
@@ -33,8 +34,10 @@ func (l *safeStringList) next() *string {
 	if l.pos >= len(l.list) {
 		return nil
 	}
+	s := &l.list[l.pos]
+	l.pos++
 
-	return &l.list[l.pos]
+	return s
 }
 
 func (l *safeFileList) append(f *file) {
@@ -47,6 +50,19 @@ func (l *safeFileList) getList() []*file {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	return l.list
+}
+
+func (l *safeFileList) next() *file {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+
+	if l.pos >= len(l.list) {
+		return nil
+	}
+	f := l.list[l.pos]
+	l.pos++
+
+	return f
 }
 
 func (c *safeCounter) increase() {

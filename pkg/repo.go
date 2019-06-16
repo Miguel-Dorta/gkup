@@ -201,7 +201,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 			root.Dirs = append(root.Dirs, child)
 			fileList = append(fileList, childFiles...)
 		} else if stat.Mode().IsRegular() {
-			child, err := getFile(path)
+			child, err := getFileNoHash(path)
 			if err != nil {
 				if OmitErrors {
 					os.Stderr.WriteString(err.Error() + "\n")
@@ -215,9 +215,19 @@ func (r *Repo) BackupPaths(paths []string) error {
 			// TODO symlinks and other things
 		}
 	}
+	fileList = append(fileList, root.Files...)
+
+	// Get hash from all files
+	multiH, err := newMultiHasher(r.sett.HashAlgorithm, BufferSize, runtime.NumCPU())
+	if err != nil {
+		return err
+	}
+	if err = multiH.hashFiles(fileList); err != nil {
+		return err
+	}
 
 	// Copy all files to repo
-	for _, f := range append(fileList, root.Files...) {
+	for _, f := range fileList {
 		if err := r.addFile(f); err != nil {
 			if OmitErrors {
 				os.Stderr.WriteString(err.Error() + "\n")
