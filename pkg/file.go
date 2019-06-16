@@ -19,7 +19,7 @@ type file struct {
 	Name string `json:"name"`
 	Size int64 `json:"size"`
 	Hash []byte `json:"hash"`
-	realPath string //Private so it won't be saved in the backup.json
+	realPath string `json:"-"`
 }
 
 func listFilesRecursive(path string) (dir, []file, error) {
