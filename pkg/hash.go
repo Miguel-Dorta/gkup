@@ -73,18 +73,18 @@ func (h *hasher) hashFile(path string) ([]byte, error) {
 	return h.hash.Sum(nil), nil
 }
 
-func (h *hasher) getFile(path string) (file, error) {
+func (h *hasher) getFile(path string) (*file, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
-		return file{}, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
+		return nil, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
 	}
 
 	hash, err := h.hashFile(path)
 	if err != nil {
-		return file{}, err
+		return nil, err
 	}
 
-	return file{
+	return &file{
 		Name: filepath.Base(path),
 		Size: stat.Size(),
 		Hash: hash,
@@ -174,10 +174,10 @@ func (h *hasher) fileGetter(in *safeStringList, out *safeFileList) error {
 	return nil
 }
 
-func (mh *multiHasher) getFiles(paths []string) ([]file, error) {
+func (mh *multiHasher) getFiles(paths []string) ([]*file, error) {
 	var eg errgroup.Group
 	pathsSafe := makeConcurrentStringList(paths)
-	filesSafe := makeConcurrentFileList(make([]file, 0, len(paths)))
+	filesSafe := makeConcurrentFileList(make([]*file, 0, len(paths)))
 
 	for _, w := range mh.workers {
 		eg.Go(func() error {

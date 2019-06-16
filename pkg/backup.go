@@ -9,7 +9,7 @@ import (
 type backup struct {
 	Version string `json:"version"`
 	Dirs []dir `json:"dirs"`
-	Files []file   `json:"files"`
+	Files []*file   `json:"files"`
 }
 
 func readBackup(path string) (backup, error) {

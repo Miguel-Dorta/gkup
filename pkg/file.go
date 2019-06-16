@@ -12,7 +12,7 @@ import (
 type dir struct {
 	Name string `json:"name"`
 	Dirs []dir `json:"dirs"`
-	Files []file `json:"files"`
+	Files []*file `json:"files"`
 }
 
 type file struct {
@@ -22,16 +22,16 @@ type file struct {
 	realPath string `json:"-"`
 }
 
-func listFilesRecursive(path string) (dir, []file, error) {
+func listFilesRecursive(path string) (dir, []*file, error) {
 	children, err := listDir(path)
 	if err != nil {
 		return dir{}, nil, fmt.Errorf("cannot list \"%s\": %s", path, err.Error())
 	}
 
-	var fileList []file
+	var fileList []*file
 	d := dir {
 		Name: filepath.Base(path),
-		Files: make([]file, 0, 10),
+		Files: make([]*file, 0, 10),
 		Dirs: make([]dir, 0, 10),
 	}
 

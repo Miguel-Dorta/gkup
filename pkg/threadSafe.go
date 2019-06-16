@@ -9,7 +9,7 @@ type safeStringList struct {
 }
 
 type safeFileList struct {
-	list []file
+	list []*file
 	mutex sync.Mutex
 }
 
@@ -22,7 +22,7 @@ func makeConcurrentStringList(l []string) *safeStringList {
 	return &safeStringList{list: l}
 }
 
-func makeConcurrentFileList(l []file) *safeFileList {
+func makeConcurrentFileList(l []*file) *safeFileList {
 	return &safeFileList{list: l}
 }
 
@@ -37,13 +37,13 @@ func (l *safeStringList) next() *string {
 	return &l.list[l.pos]
 }
 
-func (l *safeFileList) append(f file) {
+func (l *safeFileList) append(f *file) {
 	l.mutex.Lock()
 	l.list = append(l.list, f)
 	l.mutex.Unlock()
 }
 
-func (l *safeFileList) getList() []file {
+func (l *safeFileList) getList() []*file {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	return l.list

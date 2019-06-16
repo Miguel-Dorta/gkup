@@ -136,7 +136,7 @@ func (r *Repo) CheckIntegrity() (errs int) {
 	return errs
 }
 
-func getFileFromName(fileName string) (file, error) {
+func getFileFromName(fileName string) (*file, error) {
 	var err error
 	f := file{
 		Name: fileName,
@@ -149,20 +149,20 @@ func getFileFromName(fileName string) (file, error) {
 		}
 
 		if f.Hash, err = hex.DecodeString(fileName[:i]); err != nil {
-			return file{}, fmt.Errorf("cannot decode hash: %s", err.Error())
+			return nil, fmt.Errorf("cannot decode hash: %s", err.Error())
 		}
 
 		if f.Size, err = strconv.ParseInt(fileName[i+1:], 10, 64); err != nil {
-			return file{}, fmt.Errorf("cannot parse size: %s", err.Error())
+			return nil, fmt.Errorf("cannot parse size: %s", err.Error())
 		}
 		break
 	}
 
 	if f.Hash == nil || f.Size < 0 {
-		return file{}, errors.New("invalid format")
+		return nil, errors.New("invalid format")
 	}
 
-	return f, nil
+	return &f, nil
 }
 
 func (r *Repo) BackupPaths(paths []string) error {
@@ -172,9 +172,9 @@ func (r *Repo) BackupPaths(paths []string) error {
 
 	now := time.Now() //Save the moment where the backup started
 
-	fileList := make([]file, 0, 1000)
+	fileList := make([]*file, 0, 1000)
 	root := dir{
-		Files: make([]file, 0, 10),
+		Files: make([]*file, 0, 10),
 		Dirs: make([]dir, 0, 10),
 	}
 
@@ -306,7 +306,7 @@ func (r *Repo) restoreDir(d dir, pathToRestore string) error {
 	return nil
 }
 
-func (r *Repo) getPathInRepo(f file) string {
+func (r *Repo) getPathInRepo(f *file) string {
 	hashStr := hex.EncodeToString(f.Hash)
 	return filepath.Join(
 		r.filesFolder,
@@ -315,7 +315,7 @@ func (r *Repo) getPathInRepo(f file) string {
 	)
 }
 
-func (r *Repo) addFile(f file) error {
+func (r *Repo) addFile(f *file) error {
 	pathToSave := r.getPathInRepo(f)
 
 	// If file already exists, do nothing. If exists but there's an error, return it
