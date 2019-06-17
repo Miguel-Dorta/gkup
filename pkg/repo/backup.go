@@ -1,17 +1,21 @@
-package pkg
+package repo
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"io/ioutil"
 )
 
+// backup is a type for saving the files and directories that are backed up.
+// It is intended to be saved in json format
 type backup struct {
 	Version string `json:"version"`
-	Dirs []dir `json:"dirs"`
-	Files []*file   `json:"files"`
+	Dirs []files.Dir `json:"dirs"`
+	Files []*files.File `json:"files"`
 }
 
+// readBackup reads and parses the backup from the path provided
 func readBackup(path string) (backup, error) {
 	var b backup
 
@@ -26,17 +30,10 @@ func readBackup(path string) (backup, error) {
 	return b, nil
 }
 
-func writeBackup(path string, d dir) error {
-	data, err := json.Marshal(backup{
-		Version: Version,
-		Dirs: d.Dirs,
-		Files: d.Files,
-	})
-	if err != nil {
-		return fmt.Errorf("cannot compose backup: %s", err.Error())
-	}
-
-	if err = ioutil.WriteFile(path, data, 0600); err != nil {
+// writeBackup writes the backup provided in the path provided
+func writeBackup(path string, b backup) error {
+	data, _ := json.Marshal(b)
+	if err := ioutil.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("cannot write backup to \"%s\": %s", path, err.Error())
 	}
 
