@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
+	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
 	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"os"
@@ -26,33 +27,33 @@ func (h *Hasher) fileChecker(in *threadSafe.StringList, errs *threadSafe.Counter
 
 		stat, err := os.Stat(*path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "cannot get info from \"%s\": %s\n", *path, err.Error())
+			logger.Log.Error(fmt.Sprintf("cannot get info from \"%s\": %s\n", *path, err.Error()))
 			errs.Increase()
 			continue
 		}
 
 		f, err := files.GetFileFromName(stat.Name())
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+			logger.Log.Error(err.Error())
 			errs.Increase()
 			continue
 		}
 
 		if f.Size != stat.Size() {
-			fmt.Fprintf(os.Stderr, "sizes don't match in \"%s\"\n", *path)
+			logger.Log.Error(fmt.Sprintf("sizes don't match in \"%s\"\n", *path))
 			errs.Increase()
 			continue
 		}
 
 		hash, err := h.HashPath(*path)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+			logger.Log.Error(err.Error())
 			errs.Increase()
 			continue
 		}
 
 		if !bytes.Equal(f.Hash, hash) {
-			fmt.Fprintf(os.Stderr, "hashes don't match in \"%s\"\n", *path)
+			logger.Log.Error(fmt.Sprintf("hashes don't match in \"%s\"\n", *path))
 			errs.Increase()
 			continue
 		} else {
@@ -72,7 +73,7 @@ func (h *Hasher) fileGetter(in *threadSafe.StringList, out *threadSafe.FileList)
 		f, err := h.GetFile(*path)
 		if err != nil {
 			if tmp.OmitErrors {
-				fmt.Fprintf(os.Stderr, "Error hashing file \"%s\": %s\n", *path, err.Error())
+				logger.Log.Error(fmt.Sprintf("Error hashing file \"%s\": %s\n", *path, err.Error()))
 				continue
 			} else {
 				return err
@@ -94,7 +95,7 @@ func (h *Hasher) fileHasher(list *threadSafe.FileList) error {
 
 		if err := h.HashFile(f); err != nil {
 			if tmp.OmitErrors {
-				os.Stderr.WriteString(err.Error() + "\n")
+				logger.Log.Error(err.Error())
 				continue
 			} else {
 				return err

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/hasher"
+	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"os"
@@ -41,7 +42,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 			child, childFiles, err := files.NewDir(path)
 			if err != nil {
 				if tmp.OmitErrors {
-					os.Stderr.WriteString(err.Error() + "\n")
+					logger.Log.Error(err.Error())
 					continue
 				} else {
 					return err
@@ -53,7 +54,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 			child, err := files.NewFile(path)
 			if err != nil {
 				if tmp.OmitErrors {
-					os.Stderr.WriteString(err.Error() + "\n")
+					logger.Log.Error(err.Error())
 					continue
 				} else {
 					return err
@@ -79,7 +80,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 	for _, f := range fileList {
 		if err := r.addFile(f); err != nil {
 			if tmp.OmitErrors {
-				os.Stderr.WriteString(err.Error() + "\n")
+				logger.Log.Error(err.Error())
 				continue
 			} else {
 				return err

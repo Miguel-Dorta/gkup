@@ -18,7 +18,7 @@ func NewMultiHasher(algorithm string, bufferSize, threads int) (*MultiHasher, er
 
 	workers := make([]*Hasher, threads)
 	for i := range workers{
-		workers[i], err = newHasher(algorithm, bufferSize)
+		workers[i], err = New(algorithm, bufferSize)
 		if err != nil {
 			return nil, err
 		}
