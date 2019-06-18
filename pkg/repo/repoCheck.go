@@ -7,7 +7,6 @@ import (
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
-	"os"
 	"path/filepath"
 	"runtime"
 )
@@ -32,7 +31,7 @@ func (r *Repo) CheckIntegrity() error {
 
 	allFiles := make([]string, 0, 1000)
 
-	errorsFound := false
+	errsFound := false
 	// c1 represent a given Child of the list l1
 	for _, c1 := range l1 {
 		if !c1.IsDir() {
@@ -45,7 +44,7 @@ func (r *Repo) CheckIntegrity() error {
 		l2, err := utils.ListDir(c1Path)
 		if err != nil {
 			logger.Log.Error(fmt.Sprintf("error listing \"%s\": %s\n", c1Path, err.Error()))
-			errorsFound = true
+			errsFound = true
 			continue
 		}
 		// c2 represents a given Child of the list l2,
@@ -58,7 +57,9 @@ func (r *Repo) CheckIntegrity() error {
 		}
 	}
 
-	errs += mHasher.CheckFiles(allFiles)
-	return errs
+	if mHasher.CheckFiles(allFiles) || errsFound {
+		return errors.New("some errors were found")
+	}
+	return nil
 }
 

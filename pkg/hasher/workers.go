@@ -15,7 +15,7 @@ import (
 // That means that they follow the specification from files.GetFileFromName() and their information is correct.
 // This process is aimed to detect file corruption or filename defects.
 // It returns the number of errors found
-func (h *Hasher) fileChecker(in *threadSafe.StringList, errs *threadSafe.Counter, wg sync.WaitGroup) {
+func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *threadSafe.Fuse, wg sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
 
@@ -28,33 +28,33 @@ func (h *Hasher) fileChecker(in *threadSafe.StringList, errs *threadSafe.Counter
 		stat, err := os.Stat(*path)
 		if err != nil {
 			logger.Log.Error(fmt.Sprintf("cannot get info from \"%s\": %s\n", *path, err.Error()))
-			errs.Increase()
+			errsFound.Trigger()
 			continue
 		}
 
 		f, err := files.GetFileFromName(stat.Name())
 		if err != nil {
 			logger.Log.Error(err.Error())
-			errs.Increase()
+			errsFound.Trigger()
 			continue
 		}
 
 		if f.Size != stat.Size() {
 			logger.Log.Error(fmt.Sprintf("sizes don't match in \"%s\"\n", *path))
-			errs.Increase()
+			errsFound.Trigger()
 			continue
 		}
 
 		hash, err := h.HashPath(*path)
 		if err != nil {
 			logger.Log.Error(err.Error())
-			errs.Increase()
+			errsFound.Trigger()
 			continue
 		}
 
 		if !bytes.Equal(f.Hash, hash) {
 			logger.Log.Error(fmt.Sprintf("hashes don't match in \"%s\"\n", *path))
-			errs.Increase()
+			errsFound.Trigger()
 			continue
 		} else {
 			// TODO log OK when implement logger

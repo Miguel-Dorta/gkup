@@ -29,17 +29,17 @@ func NewMultiHasher(algorithm string, bufferSize, threads int) (*MultiHasher, er
 // CheckFiles checks concurrently whether the files listed in the path slice provided match with the info contained in their names.
 // That means that they follow the specification from files.GetFileFromName() and their information is correct.
 // This process is aimed to detect file corruption or filename defects.
-func (mh *MultiHasher) CheckFiles(paths []string) (errs int) {
+func (mh *MultiHasher) CheckFiles(paths []string) bool {
 	var wg sync.WaitGroup
-	var safeErrs threadSafe.Counter
+	var errsFound threadSafe.Fuse
 	pathsSafe := threadSafe.NewStringList(paths)
 
 	for _, w := range mh.workers {
-		go w.fileChecker(pathsSafe, &safeErrs, wg)
+		go w.fileChecker(pathsSafe, &errsFound, wg)
 	}
 
 	wg.Wait()
-	return safeErrs.Value()
+	return errsFound.Value()
 }
 
 // GetFiles creates concurrently a list of files.File from the path list provided
