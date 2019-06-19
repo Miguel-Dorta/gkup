@@ -11,7 +11,8 @@ import (
 )
 
 // RestoreBackup restores the backup made in the date provided in the path provided.
-func (r *Repo) RestoreBackup(date, restoreTo string) error {
+func (r *Repo) RestoreBackup(date, restoreTo string, bufferSize int) error {
+	bufferSize = utils.CheckBufferSize(bufferSize)
 	if r.sett == nil {
 		return errors.New("settings not loaded")
 	}
@@ -45,17 +46,17 @@ func (r *Repo) RestoreBackup(date, restoreTo string) error {
 	//TODO check versioning
 
 	logger.Log.Infof("Restoring backup in %s", restoreTo)
-	if err := r.restoreDir(files.Dir{Files: b.Files, Dirs: b.Dirs}, restoreTo); err != nil {
+	if err := r.restoreDir(files.Dir{Files: b.Files, Dirs: b.Dirs}, restoreTo, make([]byte, bufferSize)); err != nil {
 		return err
 	}
 	return nil
 }
 
 // restoreDir restores a specific files.Dir in the path provided.
-func (r *Repo) restoreDir(d files.Dir, pathToRestore string) error {
+func (r *Repo) restoreDir(d files.Dir, pathToRestore string, buffer []byte) error {
 	for _, childFile := range d.Files {
 		logger.Log.Debugf("Restoring file %s in %s", childFile.Name, pathToRestore)
-		if err := utils.CopyFile(r.getPathInRepo(childFile), filepath.Join(pathToRestore, childFile.Name)); err != nil {
+		if err := utils.CopyFile(r.getPathInRepo(childFile), filepath.Join(pathToRestore, childFile.Name), buffer); err != nil {
 			if logger.OmitErrors {
 				logger.Log.Error(err.Error())
 				continue
@@ -76,7 +77,7 @@ func (r *Repo) restoreDir(d files.Dir, pathToRestore string) error {
 				return err
 			}
 		}
-		if err := r.restoreDir(childDir, childPath); err != nil {
+		if err := r.restoreDir(childDir, childPath, buffer); err != nil {
 			return err
 		}
 	}

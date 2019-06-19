@@ -6,7 +6,6 @@ import (
 	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/hasher"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
-	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"os"
 	"path/filepath"
@@ -15,7 +14,8 @@ import (
 )
 
 // BackupPaths backs up the paths provided and save the backup info in a file in BackupFolderName with the moment where it was created as name.
-func (r *Repo) BackupPaths(paths []string) error {
+func (r *Repo) BackupPaths(paths []string, bufferSize int) error {
+	bufferSize = utils.CheckBufferSize(bufferSize)
 	if r.sett == nil {
 		return errors.New("settings not loaded")
 	}
@@ -71,7 +71,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 	fileList = append(fileList, b.Files...)
 
 	// Get hash from all files
-	multiH, err := hasher.NewMultiHasher(r.sett.HashAlgorithm, tmp.BufferSize, runtime.NumCPU())
+	multiH, err := hasher.NewMultiHasher(r.sett.HashAlgorithm, bufferSize, runtime.NumCPU())
 	if err != nil {
 		return err
 	}
@@ -81,9 +81,10 @@ func (r *Repo) BackupPaths(paths []string) error {
 	}
 
 	logger.Log.Info("Adding files to repo")
+	copyBuffer := make([]byte, bufferSize)
 	// Copy all files to repo
 	for _, f := range fileList {
-		if err := r.addFile(f); err != nil {
+		if err := r.addFile(f, copyBuffer); err != nil {
 			if logger.OmitErrors {
 				logger.Log.Error(err.Error())
 				continue
@@ -115,7 +116,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 }
 
 // addFile adds a file to the file store of the repo
-func (r *Repo) addFile(f *files.File) error {
+func (r *Repo) addFile(f *files.File, buffer []byte) error {
 	logger.Log.Debugf("Adding file %s to repo", f.RealPath)
 	pathToSave := r.getPathInRepo(f)
 
@@ -127,7 +128,7 @@ func (r *Repo) addFile(f *files.File) error {
 		return fmt.Errorf("cannot get information of \"%s\": %s", pathToSave, err.Error())
 	}
 
-	if err := utils.CopyFile(f.RealPath, pathToSave); err != nil {
+	if err := utils.CopyFile(f.RealPath, pathToSave, buffer); err != nil {
 		return err
 	}
 	return nil

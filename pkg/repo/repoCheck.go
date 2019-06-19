@@ -4,14 +4,14 @@ import (
 	"errors"
 	"github.com/Miguel-Dorta/gkup/pkg/hasher"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
-	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"path/filepath"
 	"runtime"
 )
 
 // CheckIntegrity checks the integrity of the files stored in the repo
-func (r *Repo) CheckIntegrity() error {
+func (r *Repo) CheckIntegrity(bufferSize int) error {
+	bufferSize = utils.CheckBufferSize(bufferSize)
 	if r.sett == nil {
 		return errors.New("settings not loaded")
 	}
@@ -23,7 +23,7 @@ func (r *Repo) CheckIntegrity() error {
 		return errors.New("cannot access files")
 	}
 
-	mHasher, err := hasher.NewMultiHasher(r.sett.HashAlgorithm, tmp.BufferSize, runtime.NumCPU())
+	mHasher, err := hasher.NewMultiHasher(r.sett.HashAlgorithm, bufferSize, runtime.NumCPU())
 	if err != nil {
 		return err
 	}

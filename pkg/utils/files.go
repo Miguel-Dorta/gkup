@@ -4,13 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
-	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"io"
 	"os"
 )
 
 // CopyFile copies a file from origin path to destiny path
-func CopyFile(origin, destiny string) error {
+func CopyFile(origin, destiny string, buffer []byte) error {
 	originFile, err := os.Open(origin)
 	if err != nil {
 		return fmt.Errorf("cannot open file \"%s\": %s", origin, err.Error())
@@ -24,7 +23,7 @@ func CopyFile(origin, destiny string) error {
 	defer destinyFile.Close()
 
 	logger.Log.Debugf("Copying file %s to %s", origin, destiny)
-	if _, err = io.CopyBuffer(destinyFile, originFile, tmp.CopyBuf); err != nil {
+	if _, err = io.CopyBuffer(destinyFile, originFile, buffer); err != nil {
 		errStr := fmt.Sprintf("Error copying file from %s to %s: %s", origin, destiny, err.Error())
 		logger.Log.Error(errStr)
 
