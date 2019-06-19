@@ -11,6 +11,7 @@ import (
 
 // Create creates the structure for the repo in the path provided
 func (r *Repo) Create(hashAlgorithm string) error {
+	logger.Log.Infof("Creating directory in %s", r.path)
 	logger.Log.Debug("Checking if exists something in the repo path")
 	stat, err := os.Stat(r.path)
 	if err != nil {

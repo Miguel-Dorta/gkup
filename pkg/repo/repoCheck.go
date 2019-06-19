@@ -30,6 +30,7 @@ func (r *Repo) CheckIntegrity() error {
 
 	allFiles := make([]string, 0, 1000)
 
+	logger.Log.Info("Listing files")
 	errsFound := false
 	// c1 represent a given Child of the list l1
 	for _, c1 := range l1 {
@@ -59,6 +60,7 @@ func (r *Repo) CheckIntegrity() error {
 		}
 	}
 
+	logger.Log.Info("Checking file integrity")
 	if mHasher.CheckFiles(allFiles) || errsFound {
 		return errors.New("some errors were found")
 	}

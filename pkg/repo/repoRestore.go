@@ -45,7 +45,7 @@ func (r *Repo) RestoreBackup(date, restoreTo string) error {
 
 	//TODO check versioning
 
-	logger.Log.Debugf("Restoring backup in %s", restoreTo)
+	logger.Log.Infof("Restoring backup in %s", restoreTo)
 	if err := r.restoreDir(files.Dir{Files: b.Files, Dirs: b.Dirs}, restoreTo); err != nil {
 		return err
 	}

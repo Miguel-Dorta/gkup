@@ -111,7 +111,6 @@ func (r *Repo) BackupPaths(paths []string) error {
 		return err
 	}
 
-	logger.Log.Info("Done!")
 	return nil
 }
 
