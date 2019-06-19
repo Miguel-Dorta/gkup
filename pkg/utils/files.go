@@ -3,10 +3,10 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"io"
 	"os"
-	"strings"
 )
 
 // CopyFile copies a file from origin path to destiny path
@@ -23,25 +23,22 @@ func CopyFile(origin, destiny string) error {
 	}
 	defer destinyFile.Close()
 
+	logger.Log.Debugf("Copying file %s to %s", origin, destiny)
 	if _, err = io.CopyBuffer(destinyFile, originFile, tmp.CopyBuf); err != nil {
-		var errStr strings.Builder
-		errStr.Grow(1000)
+		errStr := fmt.Sprintf("Error copying file from %s to %s: %s", origin, destiny, err.Error())
+		logger.Log.Error(errStr)
 
-		stringBuilderAppend(&errStr,
-			"Error copying file from \"", origin, "\" to \"", destiny, "\": ", err.Error(),
-			"\n-> DESCRIPTION: ", err.Error(),
-			"\n-> CLOSED: ",
-		)
 		if err = destinyFile.Close(); err == nil {
-			errStr.WriteString("yes - REMOVED: ")
+			logger.Log.Debugf("File %s closed", destiny)
 			if err = os.Remove(destiny); err == nil {
-				errStr.WriteString("yes")
-				return errors.New(errStr.String())
+				logger.Log.Debugf("File %s removed", destiny)
+				return errors.New(errStr)
 			}
 		}
 
-		stringBuilderAppend(&errStr, "no\n-> There is a corrupt file in \"", destiny, "\". Please, remove it")
-		return errors.New(errStr.String())
+		errStr = fmt.Sprintf("%s\n-> There's a corrupt file in \"%s\". Please, remove it", errStr, destiny)
+		logger.Log.Error(errStr)
+		return errors.New(errStr)
 	}
 
 	return destinyFile.Close()

@@ -2,7 +2,6 @@ package hasher
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
@@ -25,9 +24,10 @@ func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *threadSafe.Fu
 			break
 		}
 
+		logger.Log.Debugf("Checking integrity of %s", *path)
 		stat, err := os.Stat(*path)
 		if err != nil {
-			logger.Log.Error(fmt.Sprintf("cannot get info from \"%s\": %s\n", *path, err.Error()))
+			logger.Log.Errorf("cannot get info from \"%s\": %s\n", *path, err.Error())
 			errsFound.Trigger()
 			continue
 		}
@@ -40,7 +40,7 @@ func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *threadSafe.Fu
 		}
 
 		if f.Size != stat.Size() {
-			logger.Log.Error(fmt.Sprintf("sizes don't match in \"%s\"\n", *path))
+			logger.Log.Errorf("sizes don't match in \"%s\"\n", *path)
 			errsFound.Trigger()
 			continue
 		}
@@ -53,12 +53,12 @@ func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *threadSafe.Fu
 		}
 
 		if !bytes.Equal(f.Hash, hash) {
-			logger.Log.Error(fmt.Sprintf("hashes don't match in \"%s\"\n", *path))
+			logger.Log.Errorf("hashes don't match in \"%s\"\n", *path)
 			errsFound.Trigger()
 			continue
-		} else {
-			// TODO log OK when implement logger
 		}
+
+		logger.Log.Debugf("File %s is correct", *path)
 	}
 }
 
@@ -73,7 +73,7 @@ func (h *Hasher) fileGetter(in *threadSafe.StringList, out *threadSafe.FileList)
 		f, err := h.GetFile(*path)
 		if err != nil {
 			if tmp.OmitErrors {
-				logger.Log.Error(fmt.Sprintf("Error hashing file \"%s\": %s\n", *path, err.Error()))
+				logger.Log.Errorf("Error hashing file \"%s\": %s\n", *path, err.Error())
 				continue
 			} else {
 				return err

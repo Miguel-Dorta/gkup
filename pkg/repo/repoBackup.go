@@ -28,6 +28,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 		Dirs: make([]files.Dir, 0, 10),
 	}
 
+	logger.Log.Info("Listing files")
 	// List all paths recursively
 	for _, path := range paths {
 		stat, err := os.Stat(path)
@@ -39,6 +40,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 		}
 
 		if stat.Mode().IsDir() {
+			logger.Log.Debugf("Listing directory %s", path)
 			child, childFiles, err := files.NewDir(path)
 			if err != nil {
 				if tmp.OmitErrors {
@@ -51,6 +53,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 			b.Dirs = append(b.Dirs, child)
 			fileList = append(fileList, childFiles...)
 		} else if stat.Mode().IsRegular() {
+			logger.Log.Debugf("Listing file %s", path)
 			child, err := files.NewFile(path)
 			if err != nil {
 				if tmp.OmitErrors {
@@ -72,10 +75,12 @@ func (r *Repo) BackupPaths(paths []string) error {
 	if err != nil {
 		return err
 	}
+	logger.Log.Info("Hashing files")
 	if err = multiH.HashFiles(fileList); err != nil {
 		return err
 	}
 
+	logger.Log.Info("Adding files to repo")
 	// Copy all files to repo
 	for _, f := range fileList {
 		if err := r.addFile(f); err != nil {
@@ -88,23 +93,36 @@ func (r *Repo) BackupPaths(paths []string) error {
 		}
 	}
 
-	return writeBackup(filepath.Join(r.backupFolder, fmt.Sprintf(
-		"%04d-%02d-%02d_%02d-%02d-%02d.json",
-		now.Year(),
-		now.Month(),
-		now.Day(),
-		now.Hour(),
-		now.Minute(),
-		now.Second(),
-	)), b)
+	logger.Log.Info("Saving backup")
+	if err = writeBackup(
+		filepath.Join(
+			r.backupFolder,
+			fmt.Sprintf(
+				"%04d-%02d-%02d_%02d-%02d-%02d.json",
+				now.Year(),
+				now.Month(),
+				now.Day(),
+				now.Hour(),
+				now.Minute(),
+				now.Second(),
+			),
+		),
+	b); err != nil {
+		return err
+	}
+
+	logger.Log.Info("Done!")
+	return nil
 }
 
 // addFile adds a file to the file store of the repo
 func (r *Repo) addFile(f *files.File) error {
+	logger.Log.Debugf("Adding file %s to repo", f.RealPath)
 	pathToSave := r.getPathInRepo(f)
 
 	// If file already exists, do nothing. If exists but there's an error, return it
 	if _, err := os.Stat(pathToSave); err == nil {
+		logger.Log.Debug("It's already in the repo. Omitting...")
 		return nil
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("cannot get information of \"%s\": %s", pathToSave, err.Error())

@@ -34,6 +34,7 @@ func NewDir(path string) (Dir, []*File, error) {
 		childPath := filepath.Join(path, child.Name())
 
 		if child.Mode().IsDir() {
+			logger.Log.Debugf("Listing directory %s", path)
 			subChild, childFiles, err := NewDir(childPath)
 			if err != nil {
 				if tmp.OmitErrors {
@@ -46,6 +47,7 @@ func NewDir(path string) (Dir, []*File, error) {
 			d.Dirs = append(d.Dirs, subChild)
 			fileList = append(fileList, childFiles...)
 		} else if child.Mode().IsRegular() {
+			logger.Log.Debugf("Listing file %s", path)
 			subChild, err := NewFile(childPath)
 			if err != nil {
 				if tmp.OmitErrors {

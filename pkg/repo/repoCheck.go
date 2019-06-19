@@ -2,7 +2,6 @@ package repo
 
 import (
 	"errors"
-	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/hasher"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/tmp"
@@ -34,26 +33,29 @@ func (r *Repo) CheckIntegrity() error {
 	errsFound := false
 	// c1 represent a given Child of the list l1
 	for _, c1 := range l1 {
+		c1Path := filepath.Join(r.filesFolder, c1.Name())
 		if !c1.IsDir() {
+			logger.Log.Debugf("%s is not a directory. Skipping...", c1Path)
 			continue
 		}
-		c1Path := filepath.Join(r.filesFolder, c1.Name())
 
 		// l2 is the list of elements in repo/files/c1.
 		// It should contain the files named like <hash_hex>-<size_bytes>
 		l2, err := utils.ListDir(c1Path)
 		if err != nil {
-			logger.Log.Error(fmt.Sprintf("error listing \"%s\": %s\n", c1Path, err.Error()))
+			logger.Log.Errorf("error listing \"%s\": %s\n", c1Path, err.Error())
 			errsFound = true
 			continue
 		}
 		// c2 represents a given Child of the list l2,
 		// that means, a file in repo/files/c1
 		for _, c2 := range l2 {
+			c2Path := filepath.Join(c1Path, c2.Name())
 			if !c2.Mode().IsRegular() {
+				logger.Log.Debugf("%s is not a file. Skipping...", c2Path)
 				continue
 			}
-			allFiles = append(allFiles, filepath.Join(c1Path, c2.Name()))
+			allFiles = append(allFiles, c2Path)
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
+	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"path/filepath"
 )
 
@@ -32,6 +33,7 @@ func New(repoPath string) Repo {
 
 // LoadSettings loads the repo settings
 func (r *Repo) LoadSettings() error {
+	logger.Log.Debug("Loading settings...")
 	sett, err := readSettings(r.settingsPath)
 	if err != nil {
 		return err
