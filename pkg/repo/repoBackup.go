@@ -43,7 +43,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 			logger.Log.Debugf("Listing directory %s", path)
 			child, childFiles, err := files.NewDir(path)
 			if err != nil {
-				if tmp.OmitErrors {
+				if logger.OmitErrors {
 					logger.Log.Error(err.Error())
 					continue
 				} else {
@@ -56,7 +56,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 			logger.Log.Debugf("Listing file %s", path)
 			child, err := files.NewFile(path)
 			if err != nil {
-				if tmp.OmitErrors {
+				if logger.OmitErrors {
 					logger.Log.Error(err.Error())
 					continue
 				} else {
@@ -84,7 +84,7 @@ func (r *Repo) BackupPaths(paths []string) error {
 	// Copy all files to repo
 	for _, f := range fileList {
 		if err := r.addFile(f); err != nil {
-			if tmp.OmitErrors {
+			if logger.OmitErrors {
 				logger.Log.Error(err.Error())
 				continue
 			} else {

@@ -3,7 +3,6 @@ package files
 import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
-	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"path/filepath"
 )
@@ -37,7 +36,7 @@ func NewDir(path string) (Dir, []*File, error) {
 			logger.Log.Debugf("Listing directory %s", path)
 			subChild, childFiles, err := NewDir(childPath)
 			if err != nil {
-				if tmp.OmitErrors {
+				if logger.OmitErrors {
 					logger.Log.Error(err.Error())
 					continue
 				} else {
@@ -50,7 +49,7 @@ func NewDir(path string) (Dir, []*File, error) {
 			logger.Log.Debugf("Listing file %s", path)
 			subChild, err := NewFile(childPath)
 			if err != nil {
-				if tmp.OmitErrors {
+				if logger.OmitErrors {
 					logger.Log.Error(err.Error())
 					continue
 				} else {

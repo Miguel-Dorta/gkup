@@ -5,7 +5,5 @@ package tmp
 var (
 	BufferSize = 4*1024*1024
 	CopyBuf = make([]byte, BufferSize)
-	OmitErrors = false
 	ReadSymLink = false
-	VerboseLevel = 0
 )

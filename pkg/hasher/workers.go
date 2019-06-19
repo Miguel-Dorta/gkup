@@ -5,7 +5,6 @@ import (
 	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
-	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"os"
 	"sync"
 )
@@ -72,7 +71,7 @@ func (h *Hasher) fileGetter(in *threadSafe.StringList, out *threadSafe.FileList)
 
 		f, err := h.GetFile(*path)
 		if err != nil {
-			if tmp.OmitErrors {
+			if logger.OmitErrors {
 				logger.Log.Errorf("Error hashing file \"%s\": %s\n", *path, err.Error())
 				continue
 			} else {
@@ -94,7 +93,7 @@ func (h *Hasher) fileHasher(list *threadSafe.FileList) error {
 		}
 
 		if err := h.HashFile(f); err != nil {
-			if tmp.OmitErrors {
+			if logger.OmitErrors {
 				logger.Log.Error(err.Error())
 				continue
 			} else {

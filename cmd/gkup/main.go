@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg"
+	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"os"
 )
 
@@ -18,6 +19,7 @@ Optional args:
 		os.Exit(0)
 	}
 
+	logger.OmitErrors = true
 	repo := pkg.NewRepo(os.Args[2])
 	switch os.Args[1] {
 	case "create":

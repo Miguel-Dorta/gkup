@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
-	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"os"
 	"path/filepath"
@@ -57,7 +56,7 @@ func (r *Repo) restoreDir(d files.Dir, pathToRestore string) error {
 	for _, childFile := range d.Files {
 		logger.Log.Debugf("Restoring file %s in %s", childFile.Name, pathToRestore)
 		if err := utils.CopyFile(r.getPathInRepo(childFile), filepath.Join(pathToRestore, childFile.Name)); err != nil {
-			if tmp.OmitErrors {
+			if logger.OmitErrors {
 				logger.Log.Error(err.Error())
 				continue
 			} else {
@@ -70,7 +69,7 @@ func (r *Repo) restoreDir(d files.Dir, pathToRestore string) error {
 		logger.Log.Debugf("Restoring directory %s in %s", childDir.Name, pathToRestore)
 		childPath := filepath.Join(pathToRestore, childDir.Name)
 		if err := os.Mkdir(childPath, 0700); err != nil {
-			if tmp.OmitErrors {
+			if logger.OmitErrors {
 				logger.Log.Errorf("Error restoring folder \"%s\": %s\n", childPath, err.Error())
 				continue
 			} else {
