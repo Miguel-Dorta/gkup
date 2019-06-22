@@ -3,7 +3,7 @@ env:
 builds:
   - main: cmd/gkup/main.go
     binary: gkup
-    ldflags: -X github.com/Miguel-Dorta/gkup/pkg.Version={{.Version}}
+    ldflags: -X github.com/Miguel-Dorta/gkup/pkg/version.GkupVersionStr={{.Version}}
     goos:
       - windows
       - linux

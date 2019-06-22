@@ -2,9 +2,9 @@ package repo
 
 import (
 	"fmt"
-	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
+	"github.com/Miguel-Dorta/gkup/pkg/version"
 	"os"
 	"path/filepath"
 )
@@ -56,7 +56,7 @@ func (r *Repo) Create(hashAlgorithm string) error {
 	}
 
 	logger.Log.Debug("Creating settings.toml")
-	if err := writeSettings(r.settingsPath, settings{pkg.Version, hashAlgorithm}); err != nil {
+	if err := writeSettings(r.settingsPath, settings{version.GkupVersionStr, hashAlgorithm}); err != nil {
 		return err
 	}
 	return nil
