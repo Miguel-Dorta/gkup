@@ -4,6 +4,8 @@ github.com/Miguel-Dorta/logolang v0.0.0-20190618175704-ea8482a8853f h1:NkchSe1ZG
 github.com/Miguel-Dorta/logolang v0.0.0-20190618175704-ea8482a8853f/go.mod h1:d96R6cdj1C9f4ik0/HXvMJsFb58rXGytlf/mme16Fio=
 github.com/Miguel-Dorta/logolang v0.0.0-20190619123925-06b8f0bcf5b8 h1:iNEOtpGZyvgCsT1qPkR0VRemtRoY/eikmcL8w+4zEZQ=
 github.com/Miguel-Dorta/logolang v0.0.0-20190619123925-06b8f0bcf5b8/go.mod h1:d96R6cdj1C9f4ik0/HXvMJsFb58rXGytlf/mme16Fio=
+github.com/Miguel-Dorta/logolang v0.5.0 h1:WUJl+1rlXgYgE7+gVkbCLyUHg2aI5nwpm2IfqLHcyF8=
+github.com/Miguel-Dorta/logolang v0.5.0/go.mod h1:ZGbUj/BQ6+M6FmHuXS8T2oZf2vkhRBfbiv1MsN746bI=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pelletier/go-toml v1.4.0 h1:u3Z1r+oOXJIkxqw34zVhyPgjBsm6X2wn21NWs/HfSeg=
@@ -17,6 +19,7 @@ golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJ
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190412213103-97732733099d h1:+R4KGOnez64A81RvjARKc4UT5/tI9ujCIVX+P5KiHuI=
 golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20190621203818-d432491b9138/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
