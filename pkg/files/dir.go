@@ -32,8 +32,21 @@ func NewDir(path string) (Dir, []*File, error) {
 	for _, child := range children {
 		childPath := filepath.Join(path, child.Name())
 
+		if utils.IsSymLink(child.Mode()) {
+			solvedChild, err := utils.ResolveSymlink(childPath)
+			if err != nil {
+				if logger.OmitErrors {
+					logger.Log.Error(err.Error())
+					continue
+				} else {
+					return Dir{}, nil, err
+				}
+			}
+			child = solvedChild
+		}
+
 		if child.Mode().IsDir() {
-			logger.Log.Debugf("Listing directory %s", path)
+			logger.Log.Debugf("Listing directory %s", childPath)
 			subChild, childFiles, err := NewDir(childPath)
 			if err != nil {
 				if logger.OmitErrors {
@@ -46,7 +59,7 @@ func NewDir(path string) (Dir, []*File, error) {
 			d.Dirs = append(d.Dirs, subChild)
 			fileList = append(fileList, childFiles...)
 		} else if child.Mode().IsRegular() {
-			logger.Log.Debugf("Listing file %s", path)
+			logger.Log.Debugf("Listing file %s", childPath)
 			subChild, err := NewFile(childPath)
 			if err != nil {
 				if logger.OmitErrors {
@@ -57,8 +70,6 @@ func NewDir(path string) (Dir, []*File, error) {
 				}
 			}
 			d.Files = append(d.Files, subChild)
-		} else {
-			// TODO symlinks and other cases
 		}
 	}
 

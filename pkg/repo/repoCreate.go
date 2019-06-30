@@ -27,8 +27,27 @@ func (r *Repo) Create(hashAlgorithm string) error {
 
 	logger.Log.Debug("Checking if it's a directory")
 	if !stat.IsDir() {
-		//TODO read symlink
-		return fmt.Errorf("\"%s\" is not a directory", r.path)
+		if !utils.IsSymLink(stat.Mode()) {
+			return fmt.Errorf("\"%s\" is not a directory", r.path)
+		}
+
+		logger.Log.Debugf("Resolving symlink %s", r.path)
+		realPath, err := filepath.EvalSymlinks(r.path)
+		if err != nil {
+			return fmt.Errorf("cannot resolve symlink \"%s\": %s", r.path, err.Error())
+		}
+
+		logger.Log.Debugf("Getting real stats")
+		realStat, err := os.Stat(realPath)
+		if err != nil {
+			return fmt.Errorf("cannot get stats from \"%s\": %s", realPath, err.Error())
+		}
+
+		if !realStat.IsDir() {
+			return fmt.Errorf("\"%s\" don't point to a directory", r.path)
+		}
+
+		r.path = realPath
 	}
 
 	logger.Log.Debug("Checking if it's empty")

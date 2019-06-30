@@ -39,6 +39,19 @@ func (r *Repo) BackupPaths(paths []string, bufferSize int) error {
 			return err
 		}
 
+		if utils.IsSymLink(stat.Mode()) {
+			solvedStat, err := utils.ResolveSymlink(path)
+			if err != nil {
+				if logger.OmitErrors {
+					logger.Log.Error(err.Error())
+					continue
+				} else {
+					return err
+				}
+			}
+			stat = solvedStat
+		}
+
 		if stat.Mode().IsDir() {
 			logger.Log.Debugf("Listing directory %s", path)
 			child, childFiles, err := files.NewDir(path)
@@ -64,8 +77,6 @@ func (r *Repo) BackupPaths(paths []string, bufferSize int) error {
 				}
 			}
 			b.Files = append(b.Files, child)
-		} else {
-			// TODO symlinks and other things
 		}
 	}
 	fileList = append(fileList, b.Files...)

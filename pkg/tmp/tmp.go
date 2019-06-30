@@ -3,5 +3,5 @@
 package tmp
 
 var (
-	//ReadSymLink = false
+	ReadSymLink = false
 )
