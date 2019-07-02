@@ -6,6 +6,7 @@ import (
 	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/hasher"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
+	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"os"
 	"path/filepath"
@@ -37,6 +38,23 @@ func (r *Repo) BackupPaths(paths []string, bufferSize int) error {
 				return fmt.Errorf("\"%s\" not found", path)
 			}
 			return err
+		}
+
+		if tmp.OmitHidden {
+			isHidden, err := utils.IsHidden(path, filepath.Base(path))
+			if err != nil {
+				if logger.OmitErrors {
+					logger.Log.Errorf("cannot determine if path \"%s\" is hidden: %s", path, err.Error())
+					continue
+				} else {
+					return fmt.Errorf("error determining if path \"%s\" is hidden: %s", path, err.Error())
+				}
+			}
+
+			if isHidden {
+				logger.Log.Debugf("omitting hidden file %s", path)
+				continue
+			}
 		}
 
 		if utils.IsSymLink(stat.Mode()) {

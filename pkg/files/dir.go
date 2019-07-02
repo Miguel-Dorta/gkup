@@ -3,6 +3,7 @@ package files
 import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/logger"
+	"github.com/Miguel-Dorta/gkup/pkg/tmp"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"path/filepath"
 )
@@ -31,6 +32,23 @@ func NewDir(path string) (Dir, []*File, error) {
 
 	for _, child := range children {
 		childPath := filepath.Join(path, child.Name())
+
+		if tmp.OmitHidden {
+			isHidden, err := utils.IsHidden(childPath, child.Name())
+			if err != nil {
+				if logger.OmitErrors {
+					logger.Log.Errorf("cannot determine if path \"%s\" is hidden: %s", childPath, err.Error())
+					continue
+				} else {
+					return Dir{}, nil, fmt.Errorf("error determining if path \"%s\" is hidden: %s", childPath, err.Error())
+				}
+			}
+
+			if isHidden {
+				logger.Log.Debugf("omitting hidden file %s", childPath)
+				continue
+			}
+		}
 
 		if utils.IsSymLink(child.Mode()) {
 			solvedChild, err := utils.ResolveSymlink(childPath)

@@ -4,4 +4,5 @@ package tmp
 
 var (
 	ReadSymLink = false
+	OmitHidden = false
 )
