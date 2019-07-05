@@ -75,7 +75,7 @@ func (r *Repo) Create(hashAlgorithm string) error {
 	}
 
 	pkg.Log.Debug("Creating settings.toml")
-	if err := writeSettings(r.settingsPath, settings{version.GkupVersionStr, hashAlgorithm}); err != nil {
+	if err := writeSettings(r.settingsPath, settings{pkg.Version, hashAlgorithm}); err != nil {
 		return err
 	}
 	return nil
