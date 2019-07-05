@@ -13,7 +13,7 @@ import (
 )
 
 // BackupPaths backs up the paths provided and save the backup info in a file in BackupFolderName with the moment where it was created as name.
-func (r *Repo) BackupPaths(paths []string, omitHidden, readSymLinks bool) error {
+func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSymLinks bool) error {
 	if r.sett == nil {
 		return errors.New("settings not loaded")
 	}
@@ -120,21 +120,22 @@ func (r *Repo) BackupPaths(paths []string, omitHidden, readSymLinks bool) error 
 		}
 	}
 
+	backupFileName := fmt.Sprintf(
+		"%04d-%02d-%02d_%02d-%02d-%02d.json",
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour(),
+		now.Minute(),
+		now.Second(),
+	)
+
+	if backupName != "" {
+		backupFileName = filepath.Join(backupName, backupFileName)
+	}
+
 	pkg.Log.Info("Saving backup")
-	if err = writeBackup(
-		filepath.Join(
-			r.backupFolder,
-			fmt.Sprintf(
-				"%04d-%02d-%02d_%02d-%02d-%02d.json",
-				now.Year(),
-				now.Month(),
-				now.Day(),
-				now.Hour(),
-				now.Minute(),
-				now.Second(),
-			),
-		),
-	b); err != nil {
+	if err = writeBackup(filepath.Join(r.backupFolder, backupFileName), b); err != nil {
 		return err
 	}
 
