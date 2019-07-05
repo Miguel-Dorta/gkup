@@ -2,16 +2,14 @@ package repo
 
 import (
 	"errors"
+	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/hasher"
-	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"path/filepath"
-	"runtime"
 )
 
 // CheckIntegrity checks the integrity of the files stored in the repo
-func (r *Repo) CheckIntegrity(bufferSize int) error {
-	bufferSize = utils.CheckBufferSize(bufferSize)
+func (r *Repo) CheckIntegrity() error {
 	if r.sett == nil {
 		return errors.New("settings not loaded")
 	}
@@ -23,20 +21,20 @@ func (r *Repo) CheckIntegrity(bufferSize int) error {
 		return errors.New("cannot access files")
 	}
 
-	mHasher, err := hasher.NewMultiHasher(r.sett.HashAlgorithm, bufferSize, runtime.NumCPU())
+	mHasher, err := hasher.NewMultiHasher(r.sett.HashAlgorithm)
 	if err != nil {
 		return err
 	}
 
 	allFiles := make([]string, 0, 1000)
 
-	logger.Log.Info("Listing files")
+	pkg.Log.Info("Listing files")
 	errsFound := false
 	// c1 represent a given Child of the list l1
 	for _, c1 := range l1 {
 		c1Path := filepath.Join(r.filesFolder, c1.Name())
 		if !c1.IsDir() {
-			logger.Log.Debugf("%s is not a directory. Skipping...", c1Path)
+			pkg.Log.Debugf("%s is not a directory. Skipping...", c1Path)
 			continue
 		}
 
@@ -44,7 +42,7 @@ func (r *Repo) CheckIntegrity(bufferSize int) error {
 		// It should contain the files named like <hash_hex>-<size_bytes>
 		l2, err := utils.ListDir(c1Path)
 		if err != nil {
-			logger.Log.Errorf("error listing \"%s\": %s\n", c1Path, err.Error())
+			pkg.Log.Errorf("error listing \"%s\": %s\n", c1Path, err.Error())
 			errsFound = true
 			continue
 		}
@@ -53,14 +51,14 @@ func (r *Repo) CheckIntegrity(bufferSize int) error {
 		for _, c2 := range l2 {
 			c2Path := filepath.Join(c1Path, c2.Name())
 			if !c2.Mode().IsRegular() {
-				logger.Log.Debugf("%s is not a file. Skipping...", c2Path)
+				pkg.Log.Debugf("%s is not a file. Skipping...", c2Path)
 				continue
 			}
 			allFiles = append(allFiles, c2Path)
 		}
 	}
 
-	logger.Log.Info("Checking file integrity")
+	pkg.Log.Info("Checking file integrity")
 	if mHasher.CheckFiles(allFiles) || errsFound {
 		return errors.New("some errors were found")
 	}

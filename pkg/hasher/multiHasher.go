@@ -1,6 +1,7 @@
 package hasher
 
 import (
+	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
 	"golang.org/x/sync/errgroup"
@@ -13,12 +14,12 @@ type MultiHasher struct {
 }
 
 // NewMultiHasher creates a new MultiHasher object
-func NewMultiHasher(algorithm string, bufferSize, threads int) (*MultiHasher, error) {
+func NewMultiHasher(algorithm string) (*MultiHasher, error) {
 	var err error
 
-	workers := make([]*Hasher, threads)
+	workers := make([]*Hasher, pkg.NumberOfThreads)
 	for i := range workers{
-		workers[i], err = New(algorithm, bufferSize)
+		workers[i], err = New(algorithm)
 		if err != nil {
 			return nil, err
 		}

@@ -6,8 +6,8 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
-	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"golang.org/x/crypto/sha3"
 	"hash"
 	"io"
@@ -22,7 +22,7 @@ type Hasher struct {
 }
 
 // New creates a new Hasher object
-func New(algorithm string, bufferSize int) (*Hasher, error) {
+func New(algorithm string) (*Hasher, error) {
 	var h hash.Hash
 
 	switch strings.ToLower(algorithm) {
@@ -38,7 +38,7 @@ func New(algorithm string, bufferSize int) (*Hasher, error) {
 
 	return &Hasher{
 		hash: h,
-		buf: make([]byte, bufferSize),
+		buf: make([]byte, pkg.BufferSize),
 	}, nil
 }
 
@@ -51,7 +51,7 @@ func (h *Hasher) HashFile(f *files.File) error {
 	defer file.Close()
 
 	h.hash.Reset()
-	logger.Log.Debugf("Hashing file %s", f.RealPath)
+	pkg.Log.Debugf("Hashing file %s", f.RealPath)
 	if _, err := io.CopyBuffer(h.hash, file, h.buf); err != nil {
 		return fmt.Errorf("error hashing file \"%s\": %s", f.RealPath, err.Error())
 	}
@@ -69,7 +69,7 @@ func (h *Hasher) HashPath(path string) ([]byte, error) {
 	defer f.Close()
 
 	h.hash.Reset()
-	logger.Log.Debugf("Hashing path %s", path)
+	pkg.Log.Debugf("Hashing path %s", path)
 	if _, err := io.CopyBuffer(h.hash, f, h.buf); err != nil {
 		return nil, fmt.Errorf("error hashing file \"%s\": %s", path, err.Error())
 	}
@@ -83,7 +83,7 @@ func (h *Hasher) GetFile(path string) (*files.File, error) {
 		return nil, fmt.Errorf("cannot get information of \"%s\": %s", path, err.Error())
 	}
 
-	logger.Log.Debugf("Hashing path %s and returning file", path)
+	pkg.Log.Debugf("Hashing path %s and returning file", path)
 	if f.Hash, err = h.HashPath(path); err != nil {
 		return nil, err
 	}

@@ -2,8 +2,8 @@ package hasher
 
 import (
 	"bytes"
+	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
-	"github.com/Miguel-Dorta/gkup/pkg/logger"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
 	"os"
 	"sync"
@@ -23,41 +23,41 @@ func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *threadSafe.Fu
 			break
 		}
 
-		logger.Log.Debugf("Checking integrity of %s", *path)
+		pkg.Log.Debugf("Checking integrity of %s", *path)
 		stat, err := os.Stat(*path)
 		if err != nil {
-			logger.Log.Errorf("cannot get info from \"%s\": %s\n", *path, err.Error())
+			pkg.Log.Errorf("cannot get info from \"%s\": %s\n", *path, err.Error())
 			errsFound.Trigger()
 			continue
 		}
 
 		f, err := files.GetFileFromName(stat.Name())
 		if err != nil {
-			logger.Log.Error(err.Error())
+			pkg.Log.Error(err.Error())
 			errsFound.Trigger()
 			continue
 		}
 
 		if f.Size != stat.Size() {
-			logger.Log.Errorf("sizes don't match in \"%s\"\n", *path)
+			pkg.Log.Errorf("sizes don't match in \"%s\"\n", *path)
 			errsFound.Trigger()
 			continue
 		}
 
 		hash, err := h.HashPath(*path)
 		if err != nil {
-			logger.Log.Error(err.Error())
+			pkg.Log.Error(err.Error())
 			errsFound.Trigger()
 			continue
 		}
 
 		if !bytes.Equal(f.Hash, hash) {
-			logger.Log.Errorf("hashes don't match in \"%s\"\n", *path)
+			pkg.Log.Errorf("hashes don't match in \"%s\"\n", *path)
 			errsFound.Trigger()
 			continue
 		}
 
-		logger.Log.Debugf("File %s is correct", *path)
+		pkg.Log.Debugf("File %s is correct", *path)
 	}
 }
 
@@ -71,8 +71,8 @@ func (h *Hasher) fileGetter(in *threadSafe.StringList, out *threadSafe.FileList)
 
 		f, err := h.GetFile(*path)
 		if err != nil {
-			if logger.OmitErrors {
-				logger.Log.Errorf("Error hashing file \"%s\": %s\n", *path, err.Error())
+			if pkg.OmitErrors {
+				pkg.Log.Errorf("Error hashing file \"%s\": %s\n", *path, err.Error())
 				continue
 			} else {
 				return err
@@ -93,8 +93,8 @@ func (h *Hasher) fileHasher(list *threadSafe.FileList) error {
 		}
 
 		if err := h.HashFile(f); err != nil {
-			if logger.OmitErrors {
-				logger.Log.Error(err.Error())
+			if pkg.OmitErrors {
+				pkg.Log.Error(err.Error())
 				continue
 			} else {
 				return err

@@ -2,8 +2,7 @@ package files
 
 import (
 	"fmt"
-	"github.com/Miguel-Dorta/gkup/pkg/logger"
-	"github.com/Miguel-Dorta/gkup/pkg/tmp"
+	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"path/filepath"
 )
@@ -17,7 +16,7 @@ type Dir struct {
 
 // NewDir returns a Dir object that represents the complete structure from the path provided
 // and a slice of File objects containing all the files from that structure
-func NewDir(path string) (Dir, []*File, error) {
+func NewDir(path string, omitHidden, readSymLinks bool) (Dir, []*File, error) {
 	children, err := utils.ListDir(path)
 	if err != nil {
 		return Dir{}, nil, fmt.Errorf("cannot list \"%s\": %s", path, err.Error())
@@ -33,11 +32,11 @@ func NewDir(path string) (Dir, []*File, error) {
 	for _, child := range children {
 		childPath := filepath.Join(path, child.Name())
 
-		if tmp.OmitHidden {
+		if omitHidden {
 			isHidden, err := utils.IsHidden(childPath, child.Name())
 			if err != nil {
-				if logger.OmitErrors {
-					logger.Log.Errorf("cannot determine if path \"%s\" is hidden: %s", childPath, err.Error())
+				if pkg.OmitErrors {
+					pkg.Log.Errorf("cannot determine if path \"%s\" is hidden: %s", childPath, err.Error())
 					continue
 				} else {
 					return Dir{}, nil, fmt.Errorf("error determining if path \"%s\" is hidden: %s", childPath, err.Error())
@@ -45,16 +44,16 @@ func NewDir(path string) (Dir, []*File, error) {
 			}
 
 			if isHidden {
-				logger.Log.Debugf("omitting hidden file %s", childPath)
+				pkg.Log.Debugf("omitting hidden file %s", childPath)
 				continue
 			}
 		}
 
-		if utils.IsSymLink(child.Mode()) {
+		if readSymLinks && utils.IsSymLink(child.Mode()) {
 			solvedChild, err := utils.ResolveSymlink(childPath)
 			if err != nil {
-				if logger.OmitErrors {
-					logger.Log.Error(err.Error())
+				if pkg.OmitErrors {
+					pkg.Log.Error(err.Error())
 					continue
 				} else {
 					return Dir{}, nil, err
@@ -64,11 +63,11 @@ func NewDir(path string) (Dir, []*File, error) {
 		}
 
 		if child.Mode().IsDir() {
-			logger.Log.Debugf("Listing directory %s", childPath)
-			subChild, childFiles, err := NewDir(childPath)
+			pkg.Log.Debugf("Listing directory %s", childPath)
+			subChild, childFiles, err := NewDir(childPath, omitHidden, readSymLinks)
 			if err != nil {
-				if logger.OmitErrors {
-					logger.Log.Error(err.Error())
+				if pkg.OmitErrors {
+					pkg.Log.Error(err.Error())
 					continue
 				} else {
 					return Dir{}, nil, err
@@ -77,11 +76,11 @@ func NewDir(path string) (Dir, []*File, error) {
 			d.Dirs = append(d.Dirs, subChild)
 			fileList = append(fileList, childFiles...)
 		} else if child.Mode().IsRegular() {
-			logger.Log.Debugf("Listing file %s", childPath)
+			pkg.Log.Debugf("Listing file %s", childPath)
 			subChild, err := NewFile(childPath)
 			if err != nil {
-				if logger.OmitErrors {
-					logger.Log.Error(err.Error())
+				if pkg.OmitErrors {
+					pkg.Log.Error(err.Error())
 					continue
 				} else {
 					return Dir{}, nil, err

@@ -3,7 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/Miguel-Dorta/gkup/pkg/logger"
+	"github.com/Miguel-Dorta/gkup/pkg"
 	"io"
 	"os"
 )
@@ -22,21 +22,21 @@ func CopyFile(origin, destiny string, buffer []byte) error {
 	}
 	defer destinyFile.Close()
 
-	logger.Log.Debugf("Copying file %s to %s", origin, destiny)
+	pkg.Log.Debugf("Copying file %s to %s", origin, destiny)
 	if _, err = io.CopyBuffer(destinyFile, originFile, buffer); err != nil {
 		errStr := fmt.Sprintf("Error copying file from %s to %s: %s", origin, destiny, err.Error())
-		logger.Log.Error(errStr)
+		pkg.Log.Error(errStr)
 
 		if err = destinyFile.Close(); err == nil {
-			logger.Log.Debugf("File %s closed", destiny)
+			pkg.Log.Debugf("File %s closed", destiny)
 			if err = os.Remove(destiny); err == nil {
-				logger.Log.Debugf("File %s removed", destiny)
+				pkg.Log.Debugf("File %s removed", destiny)
 				return errors.New(errStr)
 			}
 		}
 
 		errStr = fmt.Sprintf("%s\n-> There's a corrupt file in \"%s\". Please, remove it", errStr, destiny)
-		logger.Log.Error(errStr)
+		pkg.Log.Error(errStr)
 		return errors.New(errStr)
 	}
 
