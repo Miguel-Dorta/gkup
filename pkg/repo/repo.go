@@ -17,16 +17,16 @@ const (
 // Repo is a type that represents the abstract structure of a gkup repo.
 // It's the place where the backed up files, the backup info, and the backup settings are saved.
 type Repo struct {
-	sett *settings
+	sett                                          *settings
 	path, backupFolder, filesFolder, settingsPath string
 }
 
 // New creates a new Repo object
 func New(repoPath string) Repo {
 	return Repo{
-		path: repoPath,
+		path:         repoPath,
 		backupFolder: filepath.Join(repoPath, BackupFolderName),
-		filesFolder: filepath.Join(repoPath, FilesFolderName),
+		filesFolder:  filepath.Join(repoPath, FilesFolderName),
 		settingsPath: filepath.Join(repoPath, SettingsFileName),
 	}
 }

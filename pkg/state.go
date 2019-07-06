@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	BufferSize = 4 * 1024 * 1024
-	Log = logolang.NewLogger()
+	BufferSize      = 4 * 1024 * 1024
+	Log             = logolang.NewLogger()
 	NumberOfThreads = runtime.NumCPU()
-	OmitErrors = false
-	Version string
+	OmitErrors      = false
+	Version         string
 )

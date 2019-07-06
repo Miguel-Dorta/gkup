@@ -7,7 +7,7 @@ import (
 )
 
 func IsSymLink(mode os.FileMode) bool {
-	return mode & os.ModeSymlink != 0
+	return mode&os.ModeSymlink != 0
 }
 
 func ResolveSymlink(path string) (os.FileInfo, error) {

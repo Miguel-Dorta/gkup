@@ -4,8 +4,8 @@ import "sync"
 
 // FileList is a list of strings safe for concurrent use
 type StringList struct {
-	list []string
-	pos int
+	list  []string
+	pos   int
 	mutex sync.Mutex
 }
 

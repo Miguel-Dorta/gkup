@@ -18,7 +18,7 @@ func NewMultiHasher(algorithm string) (*MultiHasher, error) {
 	var err error
 
 	workers := make([]*Hasher, pkg.NumberOfThreads)
-	for i := range workers{
+	for i := range workers {
 		workers[i], err = New(algorithm)
 		if err != nil {
 			return nil, err
@@ -77,4 +77,3 @@ func (mh *MultiHasher) HashFiles(files []*files.File) error {
 	}
 	return nil
 }
-

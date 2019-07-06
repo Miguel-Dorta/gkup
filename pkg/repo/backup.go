@@ -10,9 +10,9 @@ import (
 // backup is a type for saving the files and directories that are backed up.
 // It is intended to be saved in json format
 type backup struct {
-	Version string `json:"version"`
-	Dirs []files.Dir `json:"dirs"`
-	Files []*files.File `json:"files"`
+	Version string        `json:"version"`
+	Dirs    []files.Dir   `json:"dirs"`
+	Files   []*files.File `json:"files"`
 }
 
 // readBackup reads and parses the backup from the path provided

@@ -9,8 +9,8 @@ import (
 
 // Dir represents an abstraction of a directory
 type Dir struct {
-	Name string   `json:"name"`
-	Dirs []Dir    `json:"dirs"`
+	Name  string  `json:"name"`
+	Dirs  []Dir   `json:"dirs"`
 	Files []*File `json:"files"`
 }
 
@@ -24,9 +24,9 @@ func NewDir(path string, omitHidden, readSymLinks bool) (Dir, []*File, error) {
 
 	var fileList []*File
 	d := Dir{
-		Name: filepath.Base(path),
+		Name:  filepath.Base(path),
 		Files: make([]*File, 0, 10),
-		Dirs: make([]Dir, 0, 10),
+		Dirs:  make([]Dir, 0, 10),
 	}
 
 	for _, child := range children {

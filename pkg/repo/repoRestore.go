@@ -86,4 +86,3 @@ func (r *Repo) restoreDir(d files.Dir, destination string, buffer []byte) error 
 
 	return nil
 }
-

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
-	"github.com/Miguel-Dorta/gkup/pkg/version"
 	"os"
 	"path/filepath"
 )
@@ -66,7 +65,7 @@ func (r *Repo) Create(hashAlgorithm string) error {
 	if err := os.Mkdir(r.filesFolder, 0700); err != nil {
 		return fmt.Errorf("error creating subdirectory \"%s\": %s", r.filesFolder, err.Error())
 	}
-	for i:=0x0; i<=0xff; i++ {
+	for i := 0x0; i <= 0xff; i++ {
 		path := filepath.Join(r.filesFolder, fmt.Sprintf("%02x", i))
 		pkg.Log.Debugf("Creating subfolder %s", path)
 		if err := os.Mkdir(path, 0700); err != nil {

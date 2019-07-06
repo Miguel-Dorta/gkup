@@ -23,7 +23,7 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 	fileList := make([]*files.File, 0, 1000)
 	b := backup{
 		Files: make([]*files.File, 0, 10),
-		Dirs: make([]files.Dir, 0, 10),
+		Dirs:  make([]files.Dir, 0, 10),
 	}
 
 	pkg.Log.Info("Listing files")

@@ -18,7 +18,7 @@ import (
 // Hasher is a type for making hashing operations
 type Hasher struct {
 	hash hash.Hash
-	buf []byte
+	buf  []byte
 }
 
 // New creates a new Hasher object
@@ -26,19 +26,25 @@ func New(algorithm string) (*Hasher, error) {
 	var h hash.Hash
 
 	switch strings.ToLower(algorithm) {
-	case "sha256": h = sha256.New() // Most frequent case the first
-	case "md5": h = md5.New()
-	case "sha1": h = sha1.New()
-	case "sha512": h = sha512.New()
-	case "sha3-256": h = sha3.New256()
-	case "sha3-512": h = sha3.New512()
+	case "sha256":
+		h = sha256.New() // Most frequent case the first
+	case "md5":
+		h = md5.New()
+	case "sha1":
+		h = sha1.New()
+	case "sha512":
+		h = sha512.New()
+	case "sha3-256":
+		h = sha3.New256()
+	case "sha3-512":
+		h = sha3.New512()
 	default:
 		return nil, fmt.Errorf("hash algorithm %s is not supported", algorithm)
 	}
 
 	return &Hasher{
 		hash: h,
-		buf: make([]byte, pkg.BufferSize),
+		buf:  make([]byte, pkg.BufferSize),
 	}, nil
 }
 

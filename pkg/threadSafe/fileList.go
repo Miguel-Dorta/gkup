@@ -7,8 +7,8 @@ import (
 
 // FileList is a list of files.File safe for concurrent use
 type FileList struct {
-	list []*files.File
-	pos int
+	list  []*files.File
+	pos   int
 	mutex sync.Mutex
 }
 
