@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
@@ -11,12 +10,8 @@ import (
 )
 
 func (r *Repo) ListBackups() error {
-	if r.sett == nil {
-		return errors.New("settings not loaded")
-	}
-
 	pkg.Log.Debug("Listing backup directory")
-	dirs, files, err := ListDirSorted(r.backupFolder)
+	dirs, files, err := listDirSorted(r.backupFolder)
 	if err != nil {
 		return fmt.Errorf("cannot list backup directory: %s", err.Error())
 	}
@@ -36,7 +31,7 @@ func (r *Repo) ListBackups() error {
 
 	for _, dir := range dirs {
 		dirPath := filepath.Join(r.backupFolder, dir)
-		backupsInDir, err := ListDirNamesSorted(dirPath)
+		backupsInDir, err := listDirNamesSorted(dirPath)
 		if err != nil {
 			return fmt.Errorf("cannot list directory \"%s\": %s", dirPath, err.Error())
 		}
@@ -51,7 +46,7 @@ func (r *Repo) ListBackups() error {
 	return nil
 }
 
-func ListDirNamesSorted(path string) ([]string, error) {
+func listDirNamesSorted(path string) ([]string, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -70,7 +65,7 @@ func ListDirNamesSorted(path string) ([]string, error) {
 	return names, nil
 }
 
-func ListDirSorted(path string) (dirs, files []string, err error) {
+func listDirSorted(path string) (dirs, files []string, err error) {
 	dirs = make([]string, 0, 10)
 	files = make([]string, 0, 10)
 
