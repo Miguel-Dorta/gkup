@@ -2,74 +2,94 @@ package main
 
 import (
 	"fmt"
-	"github.com/Miguel-Dorta/gkup/pkg/logger"
+	"github.com/Miguel-Dorta/gkup/cmd/gkup/cmd"
+	"github.com/Miguel-Dorta/gkup/internal"
+	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/repo"
-	"github.com/Miguel-Dorta/gkup/pkg/version"
+	"github.com/Miguel-Dorta/logolang"
 	"os"
 )
 
+func init() {
+	pkg.Version = internal.Version
+}
+
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Println(
-`Usage:    ./gkup <create/check/backup/restore/version> <repo-path> [optional-args]
-Optional args:
-    create - <sha256/sha1>
-    backup - <path-to-backup>
-    restore - <which-backup-restore> <path-to-restore>`,
-		)
-		os.Exit(0)
+	pkg.Log.Level = logolang.LevelError
+	if err := cmd.Parse(); err != nil {
+		pkg.Log.Criticalf("Error parsing commands: %s", err.Error())
+		os.Exit(1)
 	}
 
-	logger.OmitErrors = true
-	repotiar := repo.New(os.Args[2])
-	switch os.Args[1] {
-	case "create":
-		hashAlg := "sha256"
-		if len(os.Args) == 4 {
-			hashAlg = os.Args[3]
+	if len(cmd.ArgsErrors) != 0 {
+		for _, err := range cmd.ArgsErrors {
+			pkg.Log.Critical(err.Error())
 		}
-		err := repotiar.Create(hashAlg)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		break
-	case "check":
-		err := repotiar.LoadSettings()
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		errs := repotiar.CheckIntegrity(4*1024*1024)
-		fmt.Printf("Errors found: %d\n", errs)
-		break
+		os.Exit(1)
+	}
+
+	pkg.BufferSize      = cmd.BufferSize
+	pkg.NumberOfThreads = cmd.NumberOfThreads
+	pkg.OmitErrors      = cmd.OmitErrors
+	pkg.Log.Level       = cmd.VerboseLevel
+
+	r := repo.New(cmd.RepoPath)
+	switch cmd.Cmd {
 	case "backup":
-		err := repotiar.LoadSettings()
-		if err != nil {
-			fmt.Println(err.Error())
+		if len(cmd.Args) == 0 {
+			pkg.Log.Critical("No files to backup. Skipping empty backup.")
+			os.Exit(1)
 		}
-		if len(os.Args) != 4 {
-			fmt.Println("Nothing to backup - aborting!")
+
+		if err := r.LoadSettings(); err != nil {
+			pkg.Log.Criticalf("Error loading repo settings: %s", err.Error())
+			os.Exit(1)
 		}
-		err = repotiar.BackupPaths(os.Args[3:], 4*1024*1024)
-		if err != nil {
-			fmt.Println(err.Error())
+
+		if err := r.BackupPaths(cmd.Args, cmd.BackupName, cmd.OmitHidden, cmd.ReadSymLinks); err != nil {
+			pkg.Log.Criticalf("Error while backing up files: %s", err.Error())
+			os.Exit(1)
 		}
-		break
+	case "check":
+		if err := r.LoadSettings(); err != nil {
+			pkg.Log.Criticalf("Error loading repo settings: %s", err.Error())
+			os.Exit(1)
+		}
+
+		if err := r.CheckIntegrity(); err != nil {
+			pkg.Log.Criticalf("Errors found while checking repo: %s", err.Error())
+			os.Exit(1)
+		}
+	case "init":
+		if err := r.Create(cmd.Sum); err != nil {
+			pkg.Log.Criticalf("Error initializing repository: %s", err.Error())
+			os.Exit(1)
+		}
+	case "list":
+		if err := r.ListBackups(); err != nil {
+			pkg.Log.Criticalf("Error listing backups: %s", err.Error())
+			os.Exit(1)
+		}
 	case "restore":
-		err := repotiar.LoadSettings()
-		if err != nil {
-			fmt.Println(err.Error())
+		if len(cmd.Args) == 0 {
+			pkg.Log.Critical("Destination path not provided.")
+			os.Exit(1)
 		}
-		if len(os.Args) != 5 {
-			fmt.Println("Insufficient arguments - aborting!")
+		if len(cmd.Args) > 1 {
+			pkg.Log.Critical("More than one path to restore provided.")
+			os.Exit(1)
 		}
-		err = repotiar.RestoreBackup(os.Args[3], os.Args[4], 4*1024*1024)
-		if err != nil {
-			fmt.Println(err.Error())
+
+		if err := r.LoadSettings(); err != nil {
+			pkg.Log.Criticalf("Error loading repo settings: %s", err.Error())
+			os.Exit(1)
 		}
-		break
-	case "version":
-		fmt.Printf("Gkup version: %s\n", version.String(version.GkupVersion))
+
+		if err := r.RestoreBackup(cmd.BackupName, cmd.BackupDate, cmd.Args[0]); err != nil {
+			pkg.Log.Criticalf("Error restoring backup: %s", err.Error())
+			os.Exit(1)
+		}
 	default:
-		fmt.Printf("Command not found!")
+		fmt.Printf("gkup: %s: command not found\n", cmd.Cmd)
 	}
 }
