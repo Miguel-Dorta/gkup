@@ -22,8 +22,8 @@ type Repo struct {
 }
 
 // New creates a new Repo object
-func New(repoPath string) Repo {
-	return Repo{
+func New(repoPath string) *Repo {
+	return &Repo{
 		path:         repoPath,
 		backupFolder: filepath.Join(repoPath, BackupFolderName),
 		filesFolder:  filepath.Join(repoPath, FilesFolderName),
