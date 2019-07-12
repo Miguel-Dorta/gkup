@@ -6,7 +6,6 @@ import (
 	"github.com/Miguel-Dorta/gkup/internal"
 	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/repo"
-	"github.com/Miguel-Dorta/logolang"
 	"os"
 )
 
@@ -15,7 +14,6 @@ func init() {
 }
 
 func main() {
-	pkg.Log.Level = logolang.LevelError
 	if err := cmd.Parse(); err != nil {
 		pkg.Log.Criticalf("Error parsing commands: %s", err.Error())
 		os.Exit(1)
