@@ -7,10 +7,20 @@ import (
 	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/repo"
 	"os"
+	"time"
 )
 
 func init() {
 	pkg.Version = internal.Version
+	pkg.Log.Formatter = func(levelName, msg string) string {
+		now := time.Now()
+		return fmt.Sprintf(
+			"[%04d-%02d-%02d %02d:%02d:%02d] %s: %s",
+			now.Year(), now.Month(), now.Day(),
+			now.Hour(), now.Minute(), now.Second(),
+			levelName, msg,
+		)
+	}
 }
 
 func main() {
