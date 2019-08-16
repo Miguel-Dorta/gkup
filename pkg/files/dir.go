@@ -25,8 +25,8 @@ func NewDir(path string, omitHidden, readSymLinks bool) (Dir, []*File, error) {
 	var fileList []*File
 	d := Dir{
 		Name:  filepath.Base(path),
-		Files: make([]*File, 0, 10),
-		Dirs:  make([]Dir, 0, 10),
+		Files: make([]*File, 0, pkg.SliceSmallCapacity),
+		Dirs:  make([]Dir, 0, pkg.SliceSmallCapacity),
 	}
 
 	for _, child := range children {

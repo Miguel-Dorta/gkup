@@ -18,17 +18,19 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 		return errors.New("settings not loaded")
 	}
 
-	now := time.Now() //Save the moment where the backup started
+	startTime := time.Now() //Save the moment where the backup started
 
-	fileList := make([]*files.File, 0, 1000)
+	fileList := make([]*files.File, 0, pkg.SliceBigCapacity)
 	b := backup{
-		Files: make([]*files.File, 0, 10),
-		Dirs:  make([]files.Dir, 0, 10),
+		Files: make([]*files.File, 0, pkg.SliceSmallCapacity),
+		Dirs:  make([]files.Dir, 0, pkg.SliceSmallCapacity),
 	}
 
 	pkg.Log.Info("Listing files")
 	// List all paths recursively
 	for _, path := range paths {
+
+		// Get info of file (and check if it exists)
 		stat, err := os.Stat(path)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -37,6 +39,7 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 			return err
 		}
 
+		// Skip if it's hidden
 		if omitHidden {
 			isHidden, err := utils.IsHidden(path, filepath.Base(path))
 			if err != nil {
@@ -54,6 +57,7 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 			}
 		}
 
+		// Resolve if is symlink
 		if readSymLinks && utils.IsSymLink(stat.Mode()) {
 			solvedStat, err := utils.ResolveSymlink(path)
 			if err != nil {
@@ -64,7 +68,7 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 					return err
 				}
 			}
-			stat = solvedStat
+			stat = solvedStat // Set the original stat to the stat after resolving symlink
 		}
 
 		if stat.Mode().IsDir() {
@@ -78,8 +82,10 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 					return err
 				}
 			}
+
 			b.Dirs = append(b.Dirs, child)
 			fileList = append(fileList, childFiles...)
+
 		} else if stat.Mode().IsRegular() {
 			pkg.Log.Debugf("Listing file %s", path)
 			child, err := files.NewFile(path)
@@ -91,6 +97,7 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 					return err
 				}
 			}
+
 			b.Files = append(b.Files, child)
 		}
 	}
@@ -122,12 +129,12 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 
 	backupFileName := fmt.Sprintf(
 		"%04d-%02d-%02d_%02d-%02d-%02d.json",
-		now.Year(),
-		now.Month(),
-		now.Day(),
-		now.Hour(),
-		now.Minute(),
-		now.Second(),
+		startTime.Year(),
+		startTime.Month(),
+		startTime.Day(),
+		startTime.Hour(),
+		startTime.Minute(),
+		startTime.Second(),
 	)
 
 	if backupName != "" {

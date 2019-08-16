@@ -17,7 +17,7 @@ type settings struct {
 func readSettings(path string) (sett settings, err error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return sett, fmt.Errorf("cannot read settings in \"%s\": %s", path, err.Error())
+		return sett, fmt.Errorf("cannot read settings file in \"%s\": %s", path, err.Error())
 	}
 
 	if err = toml.Unmarshal(data, &sett); err != nil {
