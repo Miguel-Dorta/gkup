@@ -1,5 +1,5 @@
 # gkup
-**WARNING:** Do NOT use it! This program stills in its alpha development phase.
+**WARNING:** Do NOT use it! This program stills in its beta development phase.
 
 gkup is a backup tool whose aim is to reduce file redundancy to a minimum. This will save a lot of space in your backup drives, avoiding multiple copies of the same files over and over.
 
