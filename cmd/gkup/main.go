@@ -36,10 +36,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	pkg.BufferSize      = cmd.BufferSize
+	pkg.BufferSize = cmd.BufferSize
 	pkg.NumberOfThreads = cmd.NumberOfThreads
-	pkg.OmitErrors      = cmd.OmitErrors
-	pkg.Log.Level       = cmd.VerboseLevel
+	pkg.OmitHidden = cmd.OmitHidden
+	pkg.OmitErrors = cmd.OmitErrors
+	pkg.Log.Level = cmd.VerboseLevel
 
 	r := repo.New(cmd.RepoPath)
 	switch cmd.Cmd {
@@ -54,7 +55,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err := r.BackupPaths(cmd.Args, cmd.BackupName, cmd.OmitHidden, cmd.ReadSymLinks); err != nil {
+		if err := r.BackupPaths(cmd.Args, cmd.BackupName); err != nil {
 			pkg.Log.Criticalf("Error while backing up files: %s", err.Error())
 			os.Exit(1)
 		}
