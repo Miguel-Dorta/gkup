@@ -26,27 +26,7 @@ func (r *Repo) Create(hashAlgorithm string) error {
 
 	pkg.Log.Debug("Checking if it's a directory")
 	if !stat.IsDir() {
-		if !utils.IsSymLink(stat.Mode()) {
-			return fmt.Errorf("\"%s\" is not a directory", r.path)
-		}
-
-		pkg.Log.Debugf("Resolving symlink %s", r.path)
-		realPath, err := filepath.EvalSymlinks(r.path)
-		if err != nil {
-			return fmt.Errorf("cannot resolve symlink \"%s\": %s", r.path, err.Error())
-		}
-
-		pkg.Log.Debugf("Getting real stats")
-		realStat, err := os.Stat(realPath)
-		if err != nil {
-			return fmt.Errorf("cannot get stats from \"%s\": %s", realPath, err.Error())
-		}
-
-		if !realStat.IsDir() {
-			return fmt.Errorf("\"%s\" don't point to a directory", r.path)
-		}
-
-		r.path = realPath
+		return fmt.Errorf("\"%s\" is not a directory", r.path)
 	}
 
 	pkg.Log.Debug("Checking if it's empty")

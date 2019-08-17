@@ -16,7 +16,7 @@ func (r *Repo) RestoreBackup(backupName, backupDate, destination string) error {
 		return errors.New("settings not loaded")
 	}
 
-	var b backup
+	var b backupFile
 	{
 		backupFolder := r.backupFolder
 		if backupName != "" {

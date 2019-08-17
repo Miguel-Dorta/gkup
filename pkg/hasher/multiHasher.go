@@ -32,15 +32,16 @@ func NewMultiHasher(algorithm string) (*MultiHasher, error) {
 // This process is aimed to detect file corruption or filename defects.
 func (mh *MultiHasher) CheckFiles(paths []string) bool {
 	var wg sync.WaitGroup
-	var errsFound threadSafe.Fuse
+	var errsFound fuse
 	pathsSafe := threadSafe.NewStringList(paths)
 
 	for _, w := range mh.workers {
-		go w.fileChecker(pathsSafe, &errsFound, wg)
+		wg.Add(1)
+		go w.fileChecker(pathsSafe, &errsFound, &wg)
 	}
 
 	wg.Wait()
-	return errsFound.Value()
+	return bool(errsFound)
 }
 
 // GetFiles creates concurrently a list of files.File from the path list provided

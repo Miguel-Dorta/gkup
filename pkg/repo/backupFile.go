@@ -7,17 +7,17 @@ import (
 	"io/ioutil"
 )
 
-// backup is a type for saving the files and directories that are backed up.
+// backupFile is a type for saving the files and directories that are backed up.
 // It is intended to be saved in json format
-type backup struct {
+type backupFile struct {
 	Version string        `json:"version"`
 	Dirs    []files.Dir   `json:"dirs"`
 	Files   []*files.File `json:"files"`
 }
 
 // readBackup reads and parses the backup from the path provided
-func readBackup(path string) (backup, error) {
-	var b backup
+func readBackup(path string) (backupFile, error) {
+	var b backupFile
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -25,13 +25,13 @@ func readBackup(path string) (backup, error) {
 	}
 
 	if err = json.Unmarshal(data, &b); err != nil {
-		return backup{}, fmt.Errorf("error parsing backup: %s", err.Error())
+		return backupFile{}, fmt.Errorf("error parsing backup: %s", err.Error())
 	}
 	return b, nil
 }
 
 // writeBackup writes the backup provided in the path provided
-func writeBackup(path string, b backup) error {
+func writeBackup(path string, b backupFile) error {
 	data, _ := json.Marshal(b)
 	if err := ioutil.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("cannot write backup to \"%s\": %s", path, err.Error())

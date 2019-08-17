@@ -17,8 +17,11 @@ const (
 // Repo is a type that represents the abstract structure of a gkup repo.
 // It's the place where the backed up files, the backup info, and the backup settings are saved.
 type Repo struct {
-	sett                                          *settings
-	path, backupFolder, filesFolder, settingsPath string
+	sett         *settings
+	path         string
+	backupFolder string
+	filesFolder  string
+	settingsPath string
 }
 
 // New creates a new Repo object

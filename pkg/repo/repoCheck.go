@@ -11,7 +11,7 @@ import (
 // CheckIntegrity checks the integrity of the files stored in the repo
 func (r *Repo) CheckIntegrity() error {
 	if r.sett == nil {
-		return errors.New("settings not loaded")
+		panic("settings not loaded in CheckIntegrity")
 	}
 
 	// l1 is the list of elements in repo/files.

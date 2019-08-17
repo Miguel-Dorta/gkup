@@ -13,10 +13,7 @@ import (
 // That means that they follow the specification from files.GetFileFromName() and their information is correct.
 // This process is aimed to detect file corruption or filename defects.
 // It returns the number of errors found
-func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *threadSafe.Fuse, wg sync.WaitGroup) {
-	wg.Add(1)
-	defer wg.Done()
-
+func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *fuse, wg *sync.WaitGroup) {
 	for {
 		path := in.Next()
 		if path == nil {
@@ -27,38 +24,39 @@ func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *threadSafe.Fu
 		stat, err := os.Stat(*path)
 		if err != nil {
 			pkg.Log.Errorf("cannot get info from \"%s\": %s\n", *path, err.Error())
-			errsFound.Trigger()
+			errsFound.trigger()
 			continue
 		}
 
 		f, err := files.GetFileFromName(stat.Name())
 		if err != nil {
 			pkg.Log.Error(err.Error())
-			errsFound.Trigger()
+			errsFound.trigger()
 			continue
 		}
 
 		if f.Size != stat.Size() {
 			pkg.Log.Errorf("sizes don't match in \"%s\"\n", *path)
-			errsFound.Trigger()
+			errsFound.trigger()
 			continue
 		}
 
 		hash, err := h.HashPath(*path)
 		if err != nil {
 			pkg.Log.Error(err.Error())
-			errsFound.Trigger()
+			errsFound.trigger()
 			continue
 		}
 
 		if !bytes.Equal(f.Hash, hash) {
 			pkg.Log.Errorf("hashes don't match in \"%s\"\n", *path)
-			errsFound.Trigger()
+			errsFound.trigger()
 			continue
 		}
 
 		pkg.Log.Debugf("File %s is correct", *path)
 	}
+	wg.Done()
 }
 
 // fileGetter is a worker that reads paths, gets its files.File, and write those last ones in a list.

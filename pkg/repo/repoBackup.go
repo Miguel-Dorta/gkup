@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
@@ -13,21 +12,21 @@ import (
 )
 
 // BackupPaths backs up the paths provided and save the backup info in a file in BackupFolderName with the moment where it was created as name.
-func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSymLinks bool) error {
+func (r *Repo) BackupPaths(paths []string, backupName string) error {
 	if r.sett == nil {
-		return errors.New("settings not loaded")
+		panic("settings not loaded in BackupPaths")
 	}
 
 	startTime := time.Now() //Save the moment where the backup started
 
 	fileList := make([]*files.File, 0, pkg.SliceBigCapacity)
-	b := backup{
+	b := backupFile{
 		Files: make([]*files.File, 0, pkg.SliceSmallCapacity),
 		Dirs:  make([]files.Dir, 0, pkg.SliceSmallCapacity),
 	}
 
-	pkg.Log.Info("Listing files")
 	// List all paths recursively
+	pkg.Log.Info("Listing files")
 	for _, path := range paths {
 
 		// Get info of file (and check if it exists)
@@ -40,40 +39,14 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 		}
 
 		// Skip if it's hidden
-		if omitHidden {
-			isHidden, err := utils.IsHidden(path, filepath.Base(path))
-			if err != nil {
-				if pkg.OmitErrors {
-					pkg.Log.Errorf("cannot determine if path \"%s\" is hidden: %s", path, err.Error())
-					continue
-				} else {
-					return fmt.Errorf("error determining if path \"%s\" is hidden: %s", path, err.Error())
-				}
-			}
-
-			if isHidden {
-				pkg.Log.Debugf("omitting hidden file %s", path)
-				continue
-			}
-		}
-
-		// Resolve if is symlink
-		if readSymLinks && utils.IsSymLink(stat.Mode()) {
-			solvedStat, err := utils.ResolveSymlink(path)
-			if err != nil {
-				if pkg.OmitErrors {
-					pkg.Log.Error(err.Error())
-					continue
-				} else {
-					return err
-				}
-			}
-			stat = solvedStat // Set the original stat to the stat after resolving symlink
+		if pkg.OmitHidden && utils.IsHidden(filepath.Base(path)) {
+			pkg.Log.Debugf("omitting hidden file %s", path)
+			continue
 		}
 
 		if stat.Mode().IsDir() {
 			pkg.Log.Debugf("Listing directory %s", path)
-			child, childFiles, err := files.NewDir(path, omitHidden, readSymLinks)
+			child, childFiles, err := files.NewDir(path)
 			if err != nil {
 				if pkg.OmitErrors {
 					pkg.Log.Error(err.Error())
@@ -99,6 +72,9 @@ func (r *Repo) BackupPaths(paths []string, backupName string, omitHidden, readSy
 			}
 
 			b.Files = append(b.Files, child)
+
+		} else {
+			pkg.Log.Debugf("omitting unsupported file %s", path)
 		}
 	}
 	fileList = append(fileList, b.Files...)

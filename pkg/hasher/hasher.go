@@ -50,6 +50,10 @@ func New(algorithm string) (*Hasher, error) {
 
 // HashFile gets and assigns the hash from the files.File provided.
 func (h *Hasher) HashFile(f *files.File) error {
+	if f.RealPath == "" {
+		return fmt.Errorf("undefined RealPath in file with name \"%s\"", f.Name)
+	}
+
 	file, err := os.Open(f.RealPath)
 	if err != nil {
 		return fmt.Errorf("cannot open file \"%s\": %s", f.RealPath, err.Error())

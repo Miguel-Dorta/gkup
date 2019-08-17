@@ -40,7 +40,10 @@ func CopyFile(origin, destiny string, buffer []byte) error {
 		return errors.New(errStr)
 	}
 
-	return destinyFile.Close()
+	if err = destinyFile.Close(); err != nil {
+		return fmt.Errorf("error closing file in \"%s\", please check it", err)
+	}
+	return nil
 }
 
 // ListDir lists the directory from the path provided
