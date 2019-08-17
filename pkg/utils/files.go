@@ -55,6 +55,6 @@ func ListDir(path string) ([]os.FileInfo, error) {
 }
 
 // IsHidden returns whether the file provided is hidden
-func IsHidden(path, name string) (bool, error) {
-	return isHidden(path, name)
+func IsHidden(name string) bool {
+	return isHidden(name)
 }
