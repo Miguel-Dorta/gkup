@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 )
 
@@ -25,7 +24,7 @@ func NewFile(path string) (*File, error) {
 	}
 
 	return &File{
-		Name:     filepath.Base(path),
+		Name:     stat.Name(),
 		Size:     stat.Size(),
 		Hash:     nil,
 		RealPath: path,
