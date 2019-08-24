@@ -7,6 +7,10 @@ import (
 )
 
 func TestFuse(t *testing.T) {
+	if runtime.NumCPU() < 2 {
+		t.Skip("this test requires two or more CPUs")
+	}
+
 	var f fuse
 	var wg sync.WaitGroup
 	var triggerFuseTimesN = func(f *fuse, n int, wg *sync.WaitGroup) {
