@@ -1,6 +1,8 @@
 package hasher
 
 import (
+	"encoding/hex"
+	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
 	"io/ioutil"
 	"os"
@@ -138,9 +140,9 @@ var hashes = []struct {
 	},
 }
 
-func TestMultiHasher_CheckFiles(t *testing.T) {
+func TestFileChecker(t *testing.T) {
 	// Create tmp dir for working in it
-	tmpDir := "/tmp/gkup-TestMultiHasher_CheckFiles"
+	tmpDir := "/tmp/gkup-TestFileChecker"
 	err := os.MkdirAll(tmpDir, 0777)
 	if err != nil {
 		t.Fatalf("Cannot create folder in /tmp: %s", err)
@@ -191,10 +193,78 @@ func TestMultiHasher_CheckFiles(t *testing.T) {
 
 // TODO separate the validation algorithm of CheckFiles for testing it
 
-func TestMultiHasher_GetFiles(t *testing.T) {
+func TestFileGetter(t *testing.T) {
+	// Create hasher
+	h, err := New("sha256")
+	if err != nil {
+		t.Fatal("sha256 was not a valid hash for creating hasher")
+	}
 
+	// Create list of paths and list where results will be saved
+	pathList := make([]string, len(hashes))
+	fileList := threadSafe.NewFileList(make([]*files.File, 0, len(hashes)))
+	for i := range hashes {
+		pathList[i] = hashes[i].path
+	}
+
+	// Get files (actual test)
+	if err = h.fileGetter(threadSafe.NewStringList(pathList), fileList); err != nil {
+		t.Fatalf("error getting files: %s", err)
+	}
+
+	// Check if the files were got correctly
+	for i, f := range fileList.GetList() {
+		if f == nil {
+			t.Logf("skipping i == %d", i)
+			continue
+		}
+		if f.Name != filepath.Base(hashes[i].path) {
+			t.Errorf(
+				"filenames don't match in file from path \"%s\"\n-> Expected: %s\n-> Found: %s",
+				hashes[i].path, filepath.Base(hashes[i].path), f.Name,
+			)
+		}
+		if f.RealPath != hashes[i].path {
+			t.Errorf("paths don't match\n-> Expected: %s\n-> Found: %s", hashes[i].path, f.RealPath)
+		}
+		if f.Size != 1024 {
+			t.Errorf("sizes don't match\n-> Expected: 1024\n-> Found: %d", f.Size)
+		}
+		if hex.EncodeToString(f.Hash) != hashes[i].hash {
+			t.Errorf("hashes don't match\n-> Expected: %s\n-> Found: %s", hashes[i].hash, hex.EncodeToString(f.Hash))
+		}
+	}
 }
 
-func TestMultiHasher_HashFiles(t *testing.T) {
+func TestFileHasher(t *testing.T) {
+	// Create file list
+	fileList := make([]*files.File, 0, len(hashes))
+	for _, hash := range hashes {
+		f, err := files.NewFile(hash.path)
+		if err != nil {
+			t.Fatalf("error creating file in path \"%s\": %s", hash.path, err)
+		}
+		fileList = append(fileList, f)
+	}
+	safeFileList := threadSafe.NewFileList(fileList)
 
+	// Create hasher
+	h, err := New("sha256")
+	if err != nil {
+		t.Fatal("sha256 was not a valid hash for creating hasher")
+	}
+
+	// Do the actual test
+	if err = h.fileHasher(safeFileList); err != nil {
+		t.Fatalf("error hashing files: %s", err)
+	}
+
+	// Check if they were hashed correctly
+	for i, f := range safeFileList.GetList() {
+		if hex.EncodeToString(f.Hash) != hashes[i].hash {
+			t.Errorf("hashes don't match in file \"%s\"\n-> Expected: %s\n-> Found: %s",
+				hashes[i].path, hashes[i].hash, hex.EncodeToString(f.Hash),
+			)
+		}
+	}
 }
