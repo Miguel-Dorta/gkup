@@ -1,11 +1,8 @@
 package hasher
 
 import (
-	"bytes"
 	"github.com/Miguel-Dorta/gkup/pkg"
-	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
-	"os"
 	"sync"
 )
 
@@ -21,39 +18,11 @@ func (h *Hasher) fileChecker(in *threadSafe.StringList, errsFound *fuse, wg *syn
 		}
 
 		pkg.Log.Debugf("Checking integrity of %s", *path)
-		stat, err := os.Stat(*path)
-		if err != nil {
-			pkg.Log.Errorf("cannot get info from \"%s\": %s\n", *path, err.Error())
+		if err := h.CheckFileIntegrity(*path); err != nil {
+			pkg.Log.Errorf("Error checking integrity of file \"%s\": %s", *path, err)
 			errsFound.trigger()
 			continue
 		}
-
-		f, err := files.GetFileFromName(stat.Name())
-		if err != nil {
-			pkg.Log.Error(err.Error())
-			errsFound.trigger()
-			continue
-		}
-
-		if f.Size != stat.Size() {
-			pkg.Log.Errorf("sizes don't match in \"%s\"\n", *path)
-			errsFound.trigger()
-			continue
-		}
-
-		hash, err := h.HashPath(*path)
-		if err != nil {
-			pkg.Log.Error(err.Error())
-			errsFound.trigger()
-			continue
-		}
-
-		if !bytes.Equal(f.Hash, hash) {
-			pkg.Log.Errorf("hashes don't match in \"%s\"\n", *path)
-			errsFound.trigger()
-			continue
-		}
-
 		pkg.Log.Debugf("File %s is correct", *path)
 	}
 	wg.Done()

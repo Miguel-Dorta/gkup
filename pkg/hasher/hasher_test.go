@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/Miguel-Dorta/gkup/pkg/files"
 	"github.com/Miguel-Dorta/gkup/pkg/hasher"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -271,4 +272,16 @@ func Test_HashFile(t *testing.T) {
 			t.Errorf("hashes don't match in file \"%s\"\n-> Expected: %s\n-> Found: %s", hash.path, hash.hash, hex.EncodeToString(f.Hash))
 		}
 	}
+}
+
+func Test_CheckFileIntegrity(t *testing.T) {
+	// Create tmp dir for working in it
+	tmpDir := "/tmp/gkup-CheckFileIntegrity"
+	err := os.MkdirAll(tmpDir, 0777)
+	if err != nil {
+		t.Fatalf("Cannot create folder in /tmp: %s", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+
 }

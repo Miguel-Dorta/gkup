@@ -1,6 +1,7 @@
 package hasher
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -99,4 +100,36 @@ func (h *Hasher) GetFile(path string) (*files.File, error) {
 	}
 
 	return f, nil
+}
+
+// CheckFileIntegrity checks if the file of the path provided matches the info implicit in its name.
+// This info follow the files.GetFileFromName specification.
+func (h *Hasher) CheckFileIntegrity(path string) error {
+	// Get actual info of the path provided
+	stat, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("cannot get file info of file \"%s\": %s", path, err)
+	}
+
+	// Get original info from the name
+	f, err := files.GetFileFromName(stat.Name())
+	if err != nil {
+		return fmt.Errorf("name of file \"%s\" is corrupted", path)
+	}
+
+	// Check size
+	if f.Size != stat.Size() {
+		return fmt.Errorf("sizes don't match in file \"%s\"", path)
+	}
+
+	// Hash file and check it
+	hash, err := h.HashPath(path)
+	if err != nil {
+		return fmt.Errorf("cannot get hash of file \"%s\": %s", path, err)
+	}
+	if !bytes.Equal(f.Hash, hash) {
+		return fmt.Errorf("hashes don't match in file \"%s\"", path)
+	}
+
+	return nil
 }
