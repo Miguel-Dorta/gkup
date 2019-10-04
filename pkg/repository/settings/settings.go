@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/internal"
 	"github.com/Miguel-Dorta/gkup/pkg"
@@ -31,6 +32,11 @@ func Read(path string) (Settings, error) {
 	s := Settings{}
 	if err := toml.Unmarshal(data, &s); err != nil {
 		return Settings{}, fmt.Errorf("error parsing settings: %s", err)
+	}
+
+	// Check if the fields have info
+	if s.Version == "" || s.HashAlgorithm == "" {
+		return Settings{}, errors.New("incomplete information in settings")
 	}
 	return s, nil
 }
