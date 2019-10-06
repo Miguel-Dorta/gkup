@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg"
 	"github.com/Miguel-Dorta/gkup/pkg/repository/settings"
+	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"os"
 	"path/filepath"
 )
@@ -30,11 +31,20 @@ func Create(path, hashAlgorithm string) error {
 
 	// Check if it's not a dir
 	if !stat.IsDir() {
+		return errors.New("repository path must be a directory")
+	}
+
+	// Check if dir is empty
+	list, err := utils.ListDir(path)
+	if err != nil {
 		return &os.PathError{
-			Op:   "create repository",
+			Op:   "list repository directory",
 			Path: path,
-			Err:  errors.New("must be a directory"),
+			Err:  err,
 		}
+	}
+	if len(list) != 0 {
+		return errors.New("repository path must be empty")
 	}
 
 	return create(path, hashAlgorithm)
