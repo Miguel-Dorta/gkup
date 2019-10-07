@@ -117,7 +117,7 @@ func isWellFormed(path string) bool {
 	if err != nil {
 		return false
 	}
-	if !equalsStringsSlice(topLevel, []string{"backups", "files", "settings.toml"}) {
+	if !equalsStringsSlice(topLevel, []string{"files", "settings.toml", "snapshots"}) {
 		return false
 	}
 

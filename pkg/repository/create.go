@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	backupsFolderName = "backups"
-	filesFolderName = "files"
+	snapshotsFolderName = "snapshots"
+	filesFolderName     = "files"
 )
 
 func Create(path, hashAlgorithm string) error {
@@ -53,12 +53,12 @@ func Create(path, hashAlgorithm string) error {
 // create creates a repository in the path provided with the algorithm provided.
 // the path must exist and be an empty directory.
 func create(path, hashAlgorithm string) error {
-	// Create backups dir
-	backupsFolderPath := filepath.Join(path, backupsFolderName)
-	if err := os.MkdirAll(backupsFolderPath, pkg.DefaultDirPerm); err != nil {
+	// Create snapshots dir
+	snapshotsFolderPath := filepath.Join(path, snapshotsFolderName)
+	if err := os.MkdirAll(snapshotsFolderPath, pkg.DefaultDirPerm); err != nil {
 		return &os.PathError{
-			Op:   "create backup folder",
-			Path: backupsFolderPath,
+			Op:   "create snapshots folder",
+			Path: snapshotsFolderPath,
 			Err:  err,
 		}
 	}
