@@ -1,6 +1,6 @@
 module github.com/Miguel-Dorta/gkup
 
-go 1.12
+go 1.13
 
 require (
 	github.com/Miguel-Dorta/logolang v0.5.0
