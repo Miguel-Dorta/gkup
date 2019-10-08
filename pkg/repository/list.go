@@ -1,0 +1,177 @@
+package repository
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/Miguel-Dorta/gkup/pkg/utils"
+	"io"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// snapshots represents a group of snapshots that share the same name.
+type snapshots struct {
+	name string `json:"name"`
+	times []int64 `json:"times"`
+}
+
+// snapshotNameRegex represents the name that the snapshots file should follow.
+var snapshotNameRegex = regexp.MustCompile("^(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})-(\\d{2})-(\\d{2}).json$")
+
+// List takes the repo path, list all the snapshots of that repo, and writes them in the writer
+// provided in an human-readable way or in JSON depending of the bool provided.
+func List(path string, inJson bool, writeTo io.Writer) error {
+	snapList := make([]*snapshots, 0, 100)
+	snapshotsFolderPath := filepath.Join(path, snapshotsFolderName)
+
+	// Add snapshots with no name defined
+	noNameSnap, err := getSnapshots(snapshotsFolderPath, "")
+	if err != nil {
+		return fmt.Errorf("cannot get snapshots: %w", err)
+	}
+	snapList = append(snapList, noNameSnap)
+
+	// Get file list
+	fileList, err := utils.ListDir(snapshotsFolderPath)
+	if err != nil {
+		return &os.PathError{
+			Op:   "list snapshots folder",
+			Path: snapshotsFolderPath,
+			Err:  err,
+		}
+	}
+	// Iterate folders to get snapshots with name
+	for _, f := range fileList {
+		if !f.IsDir() {
+			continue
+		}
+
+		// Append snapshots
+		snap, err := getSnapshots(filepath.Join(snapshotsFolderPath, f.Name()), f.Name())
+		if err != nil {
+			return fmt.Errorf("cannot get snapshots: %w", err)
+		}
+		snapList = append(snapList, snap)
+	}
+
+	// Sort result
+	sort.Slice(snapList, func(i, j int) bool {
+		iLow := strings.ToLower(snapList[i].name)
+		jLow := strings.ToLower(snapList[j].name)
+
+		if iLow == jLow {
+			return snapList[i].name < snapList[j].name
+		}
+		return iLow < jLow
+	})
+
+	// Get data formatted
+	var output []byte
+	if inJson {
+		output = getJSON(snapList)
+	} else {
+		output = getTXT(snapList)
+	}
+
+	// Write output
+	if _, err := writeTo.Write(output); err != nil {
+		return fmt.Errorf("cannot write list to writer provided: %w", err)
+	}
+	return nil
+}
+
+// getTXT returns a easily-readable representation of the snapshot list provided.
+func getTXT(snapList []*snapshots) []byte {
+	buf := bytes.NewBuffer(make([]byte, 0, 100))
+
+	for _, snap := range snapList {
+		name := snap.name
+		if name == "" {
+			name = "[no-name]"
+		}
+		_, _ = buf.WriteString(name)
+
+		for _, unixTime := range snap.times {
+			t := time.Unix(unixTime, 0)
+			Y, M, D := t.Date()
+			h, m, s := t.Clock()
+			_, _ = fmt.Fprintf(buf, "- %04d/%02d/%02d %02d:%02d:%02d\n", Y, M, D, h, m, s)
+		}
+		_ = buf.WriteByte('\n')
+	}
+	return buf.Bytes()
+}
+
+// getJSON returns the JSON representation of the snapshot list provided.
+func getJSON(snapList []*snapshots) []byte {
+	type j struct {
+		Snaps []*snapshots `json:"snapshots"`
+	}
+	data, _ := json.Marshal(j{Snaps:snapList})
+	return data
+}
+
+// getSnapshots list a path and return an snapshot type with the name provided, and a slice of
+// the times of the snapshots found in that path.
+func getSnapshots(path, name string) (*snapshots, error) {
+	fileList, err := utils.ListDir(path)
+	if err != nil {
+		return nil, &os.PathError{
+			Op:   "list snapshots folder",
+			Path: path,
+			Err:  err,
+		}
+	}
+
+	snap := snapshots{
+		name:  name,
+		times: make([]int64, 0, len(fileList)),
+	}
+	for _, f := range fileList {
+		if isSnapshot(f) {
+			snap.times = append(snap.times, getDateOfSnapshot(f.Name()))
+		}
+	}
+
+	sort.Slice(snap.times, func(i, j int) bool {
+		return snap.times[i] < snap.times[j]
+	})
+
+	return &snap, nil
+}
+
+// getDateOfSnapshot returns an Unix timestamp of the date contained in the name of a snapshot file
+// for the local timezone. The name must have been checked with isSnapshot, otherwise it can panic.
+func getDateOfSnapshot(name string) int64 {
+	panicMsg := "parse error: not checked snapshot: "
+	parts := snapshotNameRegex.FindStringSubmatch(name)
+	if len(parts) != 7 {
+		panic(panicMsg + "unexpected number of parts")
+	}
+
+	Y, err := strconv.Atoi(parts[1])
+	if err != nil { panic(panicMsg + err.Error())}
+	M, err := strconv.Atoi(parts[2])
+	if err != nil { panic(panicMsg + err.Error())}
+	D, err := strconv.Atoi(parts[3])
+	if err != nil { panic(panicMsg + err.Error())}
+	h, err := strconv.Atoi(parts[4])
+	if err != nil { panic(panicMsg + err.Error())}
+	m, err := strconv.Atoi(parts[5])
+	if err != nil { panic(panicMsg + err.Error())}
+	s, err := strconv.Atoi(parts[6])
+	if err != nil { panic(panicMsg + err.Error())}
+
+	return time.Date(Y, time.Month(M), D, h, m, s, 0, time.Local).Unix()
+}
+
+// isSnapshots returns true if the FileInfo provided is a snapshot file
+func isSnapshot(fi os.FileInfo) bool {
+	return fi.Mode().IsRegular() && snapshotNameRegex.MatchString(fi.Name())
+}
