@@ -10,11 +10,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	snapshotsFolderName = "snapshots"
-	filesFolderName     = "files"
-)
-
 func Create(path, hashAlgorithm string) error {
 	// Get path stat
 	stat, err := os.Stat(path)
