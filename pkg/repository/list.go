@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup/api"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"io"
 	"os"
@@ -15,19 +16,13 @@ import (
 	"time"
 )
 
-// snapshots represents a group of snapshots that share the same name.
-type snapshots struct {
-	name string `json:"name"`
-	times []int64 `json:"times"`
-}
-
 // snapshotNameRegex represents the name that the snapshots file should follow.
 var snapshotNameRegex = regexp.MustCompile("^(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})-(\\d{2})-(\\d{2}).json$")
 
 // List takes the repo path, list all the snapshots of that repo, and writes them in the writer
 // provided in an human-readable way or in JSON depending of the bool provided.
 func List(path string, inJson bool, writeTo io.Writer) error {
-	snapList := make([]*snapshots, 0, 100)
+	snapList := make([]*api.Snapshots, 0, 100)
 	snapshotsFolderPath := filepath.Join(path, snapshotsFolderName)
 
 	// Add snapshots with no name defined
@@ -62,11 +57,11 @@ func List(path string, inJson bool, writeTo io.Writer) error {
 
 	// Sort result
 	sort.Slice(snapList, func(i, j int) bool {
-		iLow := strings.ToLower(snapList[i].name)
-		jLow := strings.ToLower(snapList[j].name)
+		iLow := strings.ToLower(snapList[i].Name)
+		jLow := strings.ToLower(snapList[j].Name)
 
 		if iLow == jLow {
-			return snapList[i].name < snapList[j].name
+			return snapList[i].Name < snapList[j].Name
 		}
 		return iLow < jLow
 	})
@@ -87,18 +82,19 @@ func List(path string, inJson bool, writeTo io.Writer) error {
 }
 
 // getTXT returns a easily-readable representation of the snapshot list provided.
-func getTXT(snapList []*snapshots) []byte {
+func getTXT(snapList []*api.Snapshots) []byte {
 	buf := bytes.NewBuffer(make([]byte, 0, 100))
 
 	for _, snap := range snapList {
-		name := snap.name
+		name := snap.Name
 		if name == "" {
 			name = "[no-name]"
 		}
 		_, _ = buf.WriteString(name)
+		_ = buf.WriteByte('\n')
 
-		for _, unixTime := range snap.times {
-			t := time.Unix(unixTime, 0)
+		for _, unixTime := range snap.Times {
+			t := time.Unix(unixTime, 0).UTC()
 			Y, M, D := t.Date()
 			h, m, s := t.Clock()
 			_, _ = fmt.Fprintf(buf, "- %04d/%02d/%02d %02d:%02d:%02d\n", Y, M, D, h, m, s)
@@ -109,17 +105,21 @@ func getTXT(snapList []*snapshots) []byte {
 }
 
 // getJSON returns the JSON representation of the snapshot list provided.
-func getJSON(snapList []*snapshots) []byte {
-	type j struct {
-		Snaps []*snapshots `json:"snapshots"`
+func getJSON(snapList []*api.Snapshots) []byte {
+	list := api.List{List: make([]api.Snapshots, len(snapList))}
+	for i := range snapList {
+		list.List[i] = api.Snapshots{
+			Name:  snapList[i].Name,
+			Times: snapList[i].Times,
+		}
 	}
-	data, _ := json.Marshal(j{Snaps:snapList})
-	return data
+	data, _ := json.Marshal(list)
+	return append(data, '\n')
 }
 
 // getSnapshots list a path and return an snapshot type with the name provided, and a slice of
 // the times of the snapshots found in that path.
-func getSnapshots(path, name string) (*snapshots, error) {
+func getSnapshots(path, name string) (*api.Snapshots, error) {
 	fileList, err := utils.ListDir(path)
 	if err != nil {
 		return nil, &os.PathError{
@@ -129,25 +129,25 @@ func getSnapshots(path, name string) (*snapshots, error) {
 		}
 	}
 
-	snap := snapshots{
-		name:  name,
-		times: make([]int64, 0, len(fileList)),
+	snap := api.Snapshots{
+		Name:  name,
+		Times: make([]int64, 0, len(fileList)),
 	}
 	for _, f := range fileList {
 		if isSnapshot(f) {
-			snap.times = append(snap.times, getDateOfSnapshot(f.Name()))
+			snap.Times = append(snap.Times, getDateOfSnapshot(f.Name()))
 		}
 	}
 
-	sort.Slice(snap.times, func(i, j int) bool {
-		return snap.times[i] < snap.times[j]
+	sort.Slice(snap.Times, func(i, j int) bool {
+		return snap.Times[i] < snap.Times[j]
 	})
 
 	return &snap, nil
 }
 
-// getDateOfSnapshot returns an Unix timestamp of the date contained in the name of a snapshot file
-// for the local timezone. The name must have been checked with isSnapshot, otherwise it can panic.
+// getDateOfSnapshot returns an Unix timestamp of the date contained in the name of a snapshot file.
+// The name must have been checked with isSnapshot, otherwise it can panic.
 func getDateOfSnapshot(name string) int64 {
 	panicMsg := "parse error: not checked snapshot: "
 	parts := snapshotNameRegex.FindStringSubmatch(name)
@@ -168,7 +168,7 @@ func getDateOfSnapshot(name string) int64 {
 	s, err := strconv.Atoi(parts[6])
 	if err != nil { panic(panicMsg + err.Error())}
 
-	return time.Date(Y, time.Month(M), D, h, m, s, 0, time.Local).Unix()
+	return time.Date(Y, time.Month(M), D, h, m, s, 0, time.UTC).Unix()
 }
 
 // isSnapshots returns true if the FileInfo provided is a snapshot file
