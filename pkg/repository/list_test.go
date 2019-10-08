@@ -30,11 +30,10 @@ mypc
 )
 
 func TestList(t *testing.T) {
-	var (
-		actualTXT, actualJSON = &strings.Builder{}, &strings.Builder{}
-	)
+	var actualTXT, actualJSON = &strings.Builder{}, &strings.Builder{}
 	testdataPath := filepath.Join("testdata", "list")
 
+	// Test TXT export
 	err := repository.List(testdataPath, false, actualTXT)
 	if err != nil {
 		t.Errorf("error found listing TXT: %s", err)
@@ -42,6 +41,7 @@ func TestList(t *testing.T) {
 		t.Errorf("TXT doesn't match the expected result\n-> Expected: %s\n-> Found: %s", expectedTXT, actualTXT.String())
 	}
 
+	// Test JSON export
 	err = repository.List(testdataPath, true, actualJSON)
 	if err != nil {
 		t.Errorf("error found listing JSON: %s", err)

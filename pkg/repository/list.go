@@ -155,20 +155,16 @@ func getDateOfSnapshot(name string) int64 {
 		panic(panicMsg + "unexpected number of parts")
 	}
 
-	Y, err := strconv.Atoi(parts[1])
-	if err != nil { panic(panicMsg + err.Error())}
-	M, err := strconv.Atoi(parts[2])
-	if err != nil { panic(panicMsg + err.Error())}
-	D, err := strconv.Atoi(parts[3])
-	if err != nil { panic(panicMsg + err.Error())}
-	h, err := strconv.Atoi(parts[4])
-	if err != nil { panic(panicMsg + err.Error())}
-	m, err := strconv.Atoi(parts[5])
-	if err != nil { panic(panicMsg + err.Error())}
-	s, err := strconv.Atoi(parts[6])
-	if err != nil { panic(panicMsg + err.Error())}
+	var dates [6]int
+	for i := range dates {
+		x, err := strconv.Atoi(parts[i+1])
+		if err != nil {
+			panic(panicMsg + err.Error())
+		}
+		dates[i] = x
+	}
 
-	return time.Date(Y, time.Month(M), D, h, m, s, 0, time.UTC).Unix()
+	return time.Date(dates[0], time.Month(dates[1]), dates[2], dates[3], dates[4], dates[5], 0, time.UTC).Unix()
 }
 
 // isSnapshots returns true if the FileInfo provided is a snapshot file
