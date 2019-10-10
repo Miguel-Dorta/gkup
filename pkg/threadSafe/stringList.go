@@ -11,6 +11,9 @@ type StringList struct {
 
 // NewStringList creates a new StringList object
 func NewStringList(l []string) *StringList {
+	if l == nil {
+		l = make([]string, 0, 100)
+	}
 	return &StringList{list: l}
 }
 
