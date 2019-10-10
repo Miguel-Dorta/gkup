@@ -2,7 +2,6 @@ package list_test
 
 import (
 	"github.com/Miguel-Dorta/gkup/pkg/repository/actions/list"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -31,7 +30,7 @@ mypc
 
 func TestList(t *testing.T) {
 	var actualTXT, actualJSON = &strings.Builder{}, &strings.Builder{}
-	testdataPath := filepath.Join("testdata", "list")
+	testdataPath := "testdata"
 
 	// Test TXT export
 	err := list.List(testdataPath, false, actualTXT)

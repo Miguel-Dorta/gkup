@@ -2,7 +2,6 @@ package check
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/repository"
@@ -11,11 +10,9 @@ import (
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"hash"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 )
 
@@ -74,15 +71,6 @@ func printErrs(errs []error) {
 	}
 	for _, err := range errs {
 		_, _ = fmt.Fprintln(os.Stderr, err)
-	}
-}
-
-func getHash(algorithm string) (hash.Hash, error) {
-	switch strings.ToLower(algorithm) {
-	case "sha256":
-		return sha256.New(), nil
-	default:
-		return nil, errors.New("hash algorithm unknown")
 	}
 }
 
@@ -147,20 +135,4 @@ func getAllFiles(path string) ([]string, error) {
 		}
 	}
 	return result, nil
-}
-
-func hashFile(path string, h hash.Hash, buf []byte) ([]byte, error) {
-	h.Reset()
-
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	if _, err = io.CopyBuffer(h, f, buf); err != nil {
-		return nil, err
-	}
-
-	return h.Sum(nil), nil
 }
