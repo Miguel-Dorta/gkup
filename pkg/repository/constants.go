@@ -1,6 +1,6 @@
 package repository
 
 const (
-	filesFolderName     = "files"
-	snapshotsFolderName = "snapshots"
+	FilesFolderName     = "files"
+	SnapshotsFolderName = "snapshots"
 )

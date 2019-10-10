@@ -1,10 +1,11 @@
-package repository
+package list
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/api"
+	"github.com/Miguel-Dorta/gkup/pkg/repository"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"io"
 	"os"
@@ -23,7 +24,7 @@ var snapshotNameRegex = regexp.MustCompile("^(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})
 // provided in an human-readable way or in JSON depending of the bool provided.
 func List(path string, inJson bool, writeTo io.Writer) error {
 	snapList := make([]*api.Snapshots, 0, 100)
-	snapshotsFolderPath := filepath.Join(path, snapshotsFolderName)
+	snapshotsFolderPath := filepath.Join(path, repository.SnapshotsFolderName)
 
 	// Add snapshots with no name defined
 	noNameSnap, err := getSnapshots(snapshotsFolderPath, "")

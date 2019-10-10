@@ -1,10 +1,11 @@
-package repository
+package check
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup/pkg/repository"
 	"github.com/Miguel-Dorta/gkup/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
@@ -120,7 +121,7 @@ func checkFile(path string, h hash.Hash, buf []byte) error {
 func getAllFiles(path string) ([]string, error) {
 	result := make([]string, 0, 10000)
 
-	filesFolderPath := filepath.Join(path, filesFolderName)
+	filesFolderPath := filepath.Join(path, repository.FilesFolderName)
 	for i:=0; i<=0xff; i++ {
 		dirPath := filepath.Join(filesFolderPath, fmt.Sprintf("%02x", i))
 

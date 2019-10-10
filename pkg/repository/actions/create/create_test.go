@@ -1,8 +1,8 @@
-package repository_test
+package create_test
 
 import (
 	"github.com/Miguel-Dorta/gkup/internal"
-	"github.com/Miguel-Dorta/gkup/pkg/repository"
+	"github.com/Miguel-Dorta/gkup/pkg/repository/actions/create"
 	"github.com/Miguel-Dorta/gkup/pkg/repository/settings"
 	"os"
 	"path/filepath"
@@ -40,7 +40,7 @@ func createCases(t *testing.T) {
 
 func checkGoodCase(caseStr string, t *testing.T) {
 	path := filepath.Join(testingPath, caseStr)
-	if err := repository.Create(path, "sha256"); err != nil {
+	if err := create.Create(path, "sha256"); err != nil {
 		t.Errorf("error creating case %s: %s", caseStr, err)
 		return
 	}
@@ -51,7 +51,7 @@ func checkGoodCase(caseStr string, t *testing.T) {
 
 func checkBadCase(caseStr string, t *testing.T) {
 	path := filepath.Join(testingPath, caseStr)
-	if err := repository.Create(path, "sha256"); err == nil {
+	if err := create.Create(path, "sha256"); err == nil {
 		t.Errorf("not error detected in case %s", caseStr)
 	}
 }

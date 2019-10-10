@@ -1,7 +1,7 @@
-package repository_test
+package list_test
 
 import (
-	"github.com/Miguel-Dorta/gkup/pkg/repository"
+	"github.com/Miguel-Dorta/gkup/pkg/repository/actions/list"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -34,7 +34,7 @@ func TestList(t *testing.T) {
 	testdataPath := filepath.Join("testdata", "list")
 
 	// Test TXT export
-	err := repository.List(testdataPath, false, actualTXT)
+	err := list.List(testdataPath, false, actualTXT)
 	if err != nil {
 		t.Errorf("error found listing TXT: %s", err)
 	} else if expectedTXT != actualTXT.String() {
@@ -42,7 +42,7 @@ func TestList(t *testing.T) {
 	}
 
 	// Test JSON export
-	err = repository.List(testdataPath, true, actualJSON)
+	err = list.List(testdataPath, true, actualJSON)
 	if err != nil {
 		t.Errorf("error found listing JSON: %s", err)
 	} else if expectedJSON != actualJSON.String() {

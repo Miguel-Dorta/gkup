@@ -1,9 +1,10 @@
-package repository
+package create
 
 import (
 	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg"
+	"github.com/Miguel-Dorta/gkup/pkg/repository"
 	"github.com/Miguel-Dorta/gkup/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"os"
@@ -49,7 +50,7 @@ func Create(path, hashAlgorithm string) error {
 // the path must exist and be an empty directory.
 func create(path, hashAlgorithm string) error {
 	// Create snapshots dir
-	snapshotsFolderPath := filepath.Join(path, snapshotsFolderName)
+	snapshotsFolderPath := filepath.Join(path, repository.SnapshotsFolderName)
 	if err := os.MkdirAll(snapshotsFolderPath, pkg.DefaultDirPerm); err != nil {
 		return &os.PathError{
 			Op:   "create snapshots folder",
@@ -59,7 +60,7 @@ func create(path, hashAlgorithm string) error {
 	}
 
 	// Create files dir and subdirectories
-	filesFolderPath := filepath.Join(path, filesFolderName)
+	filesFolderPath := filepath.Join(path, repository.FilesFolderName)
 	for i:=0; i<=0xff; i++ {
 		subDirPath := filepath.Join(filesFolderPath, fmt.Sprintf("%02x", i))
 		if err := os.MkdirAll(subDirPath, pkg.DefaultDirPerm); err != nil {
