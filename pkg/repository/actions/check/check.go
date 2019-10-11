@@ -16,7 +16,7 @@ import (
 	"sync"
 )
 
-func Check(path string, bufSize int) error {
+func Check(path string, bufSize int, json bool) error {
 	if bufSize < 512 {
 		bufSize = 512
 	}
@@ -35,7 +35,8 @@ func Check(path string, bufSize int) error {
 	safeFileList := threadSafe.NewStringList(fileList)
 
 	// Do concurrent check
-	errList := threadSafe.NewErrorList(nil)
+	quit := make(chan bool)
+	go printStatus(safeFileList, json, quit)
 	wg := &sync.WaitGroup{}
 	for i:=0; i<runtime.NumCPU(); i++ {
 		wg.Add(1)
@@ -44,7 +45,7 @@ func Check(path string, bufSize int) error {
 			buf := make([]byte, bufSize)
 			h, err := getHash(sett.HashAlgorithm)
 			if err != nil {
-				errList.Append(err)
+				printError(err, json)
 				return
 			}
 
@@ -54,24 +55,16 @@ func Check(path string, bufSize int) error {
 					break
 				}
 				if err := checkFile(*f, h, buf); err != nil {
-					errList.Append(err)
+					printError(err, json)
+					continue
 				}
 			}
 		}()
 	}
 	wg.Wait()
+	quit <- true
 
-	printErrs(errList.GetList())
 	return nil
-}
-
-func printErrs(errs []error) {
-	if len(errs) == 0 {
-		return
-	}
-	for _, err := range errs {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-	}
 }
 
 func checkFile(path string, h hash.Hash, buf []byte) error {
