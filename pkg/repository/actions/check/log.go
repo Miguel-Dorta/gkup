@@ -48,7 +48,7 @@ func printStatusJSON(processed, total int) {
 		Processed: processed,
 		Total:     total,
 	})
-	_, _ = os.Stdout.Write(data)
+	_, _ = os.Stdout.Write(append(data, '\n', 0))
 }
 
 func printError(err error, json bool) {
@@ -57,7 +57,7 @@ func printError(err error, json bool) {
 			Type: "error",
 			Err:  err.Error(),
 		})
-		_, _ = os.Stdout.Write(data)
+		_, _ = os.Stdout.Write(append(data, '\n', 0))
 	} else {
 		_, _ = os.Stderr.WriteString("\r" + err.Error() + "\n")
 	}
