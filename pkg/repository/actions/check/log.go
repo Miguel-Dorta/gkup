@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
-	"os"
 	"time"
 )
 
@@ -19,46 +18,61 @@ type errorJSON struct {
 	Err  string `json:"error"`
 }
 
-func printStatus(list *threadSafe.StringList, json bool, quit <-chan bool) {
-	var printStatusFunc func(processed, total int)
-	if json {
-		printStatusFunc = printStatusJSON
-	} else {
-		printStatusFunc = printStatusTXT
-	}
+func printStatusAsync(list *threadSafe.StringList, quit <-chan bool) {
 	seconds := time.NewTicker(time.Second).C
-
 	for {
 		select {
 		case <-quit:
+			_, _ = statusWriter.Write([]byte{'\n'})
+			_, _ = errorWriter.Write([]byte{'\n'})
 			return
 		case <-seconds:
-			printStatusFunc(list.GetPosUnsafe(), list.GetLenUnsafe())
+			printStatus(list.GetPosUnsafe(), list.GetLenUnsafe())
 		}
 	}
 }
 
-func printStatusTXT(processed, total int) {
-	fmt.Printf("\rProcessed files: %d of %d", processed, total)
+func printStatus(processed, total int) {
+	var b []byte
+	if jsonOutput {
+		b = getStatusJSON(processed, total)
+	} else {
+		b = getStatusTXT(processed, total)
+	}
+	_, _ = statusWriter.Write(b)
 }
 
-func printStatusJSON(processed, total int) {
+func getStatusTXT(processed, total int) []byte {
+	return []byte(fmt.Sprintf("\rProcessed files: %d of %d", processed, total))
+}
+
+func getStatusJSON(processed, total int) []byte {
 	data, _ := json.Marshal(statusJSON{
 		Type:      "status",
 		Processed: processed,
 		Total:     total,
 	})
-	_, _ = os.Stdout.Write(append(data, '\n', 0))
+	return append(data, '\n', 0)
 }
 
-func printError(err error, json bool) {
-	if json {
-		data, _ := json.Marshal(errorJSON{
-			Type: "error",
-			Err:  err.Error(),
-		})
-		_, _ = os.Stdout.Write(append(data, '\n', 0))
+func printError(err error) {
+	var b []byte
+	if jsonOutput {
+		b = getErrorJSON(err)
 	} else {
-		_, _ = os.Stderr.WriteString("\r" + err.Error() + "\n")
+		b = getErrorTXT(err)
 	}
+	_, _ = errorWriter.Write(b)
+}
+
+func getErrorTXT(err error) []byte {
+	return []byte("\r" + err.Error() + "\n")
+}
+
+func getErrorJSON(err error) []byte {
+	data, _ := json.Marshal(errorJSON{
+		Type: "error",
+		Err:  err.Error(),
+	})
+	return append(data, '\n', 0)
 }

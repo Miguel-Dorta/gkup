@@ -10,16 +10,27 @@ import (
 	"github.com/Miguel-Dorta/gkup/pkg/threadSafe"
 	"github.com/Miguel-Dorta/gkup/pkg/utils"
 	"hash"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
 )
 
-func Check(path string, bufSize int, json bool) error {
+var (
+	bufferSize int
+	jsonOutput bool
+	statusWriter, errorWriter io.Writer
+)
+
+func Check(path string, bufSize int, json bool, writeStatus, writeErrors io.Writer) error {
 	if bufSize < 512 {
 		bufSize = 512
 	}
+	bufferSize = bufSize
+	jsonOutput = json
+	statusWriter = writeStatus
+	errorWriter = writeErrors
 
 	// Get settings (will be used later)
 	sett, err := settings.Read(filepath.Join(path, settings.FileName))
@@ -36,35 +47,39 @@ func Check(path string, bufSize int, json bool) error {
 
 	// Do concurrent check
 	quit := make(chan bool)
-	go printStatus(safeFileList, json, quit)
+	go printStatusAsync(safeFileList, quit)
 	wg := &sync.WaitGroup{}
 	for i:=0; i<runtime.NumCPU(); i++ {
 		wg.Add(1)
 		go func() {
-			defer wg.Done()
-			buf := make([]byte, bufSize)
-			h, err := getHash(sett.HashAlgorithm)
-			if err != nil {
-				printError(err, json)
-				return
-			}
-
-			for {
-				f := safeFileList.Next()
-				if f == nil {
-					break
-				}
-				if err := checkFile(*f, h, buf); err != nil {
-					printError(err, json)
-					continue
-				}
-			}
+			checkFilesWorker(safeFileList, sett.HashAlgorithm)
+			wg.Done()
 		}()
 	}
 	wg.Wait()
 	quit <- true
 
 	return nil
+}
+
+func checkFilesWorker(safeFileList *threadSafe.StringList, hashAlgorithm string) {
+	buf := make([]byte, bufferSize)
+	h, err := getHash(hashAlgorithm)
+	if err != nil {
+		printError(err)
+		return
+	}
+
+	for {
+		f := safeFileList.Next()
+		if f == nil {
+			break
+		}
+		if err := checkFile(*f, h, buf); err != nil {
+			printError(err)
+			continue
+		}
+	}
 }
 
 func checkFile(path string, h hash.Hash, buf []byte) error {
